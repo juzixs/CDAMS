@@ -1,6 +1,6 @@
 from datetime import datetime
 import os
-from flask import render_template, flash, redirect, url_for, request, jsonify, send_file, current_app
+from flask import render_template, flash, redirect, url_for, request, jsonify, send_file, current_app, session
 from flask_login import login_required, current_user
 from sqlalchemy import or_
 from werkzeug.utils import secure_filename
@@ -14,53 +14,42 @@ from app.utils.pdf_generator import generate_vehicle_pass_pdf
 @bp.route('/')
 @login_required
 def index():
+    """车辆通行证管理首页"""
     page = request.args.get('page', 1, type=int)
-    per_page = request.args.get('per_page', 10, type=int)
     search = request.args.get('search', '')
     status = request.args.get('status', '')
-    vehicle_type = request.args.get('vehicle_type', '')
-    department = request.args.get('department', '')
     
     query = Vehicle.query
     
-    if not current_user.is_admin:
-        query = query.filter_by(user_id=current_user.id)
-    
     if search:
-        search_term = f"%{search}%"
         query = query.filter(
             or_(
-                Vehicle.plate_number.ilike(search_term),
-                Vehicle.owner_name.ilike(search_term),
-                Vehicle.department.ilike(search_term)
+                Vehicle.plate_number.contains(search),
+                Vehicle.owner_name.contains(search),
+                Vehicle.department.contains(search)
             )
         )
     
     if status:
-        if status == 'issued':
-            query = query.filter(Vehicle.issued_at != None)
-        elif status == 'not_issued':
-            query = query.filter(Vehicle.issued_at == None)
-        else:
-            query = query.filter_by(status=status)
-            
-    if vehicle_type:
-        query = query.filter_by(vehicle_type=vehicle_type)
-    if department:
-        query = query.filter(Vehicle.department.ilike(f"%{department}%"))
-        
-    vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=per_page)
-    return render_template('vehicle/license_plate/index.html', vehicles=vehicles)
+        query = query.filter_by(status=status)
+    
+    vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
+    
+    # 在会话中记录当前页面为车辆通行证管理页面
+    session['vehicle_list_source'] = 'index'
+    
+    return render_template('vehicle/license_plate/index.html', vehicles=vehicles, search=search, status=status)
 
 @bp.route('/pending')
 @login_required
 def pending():
-    if not current_user.is_admin:
-        flash('只有管理员可以访问此页面')
-        return redirect(url_for('license_plate.index'))
-    
+    """待审核车辆列表"""
     page = request.args.get('page', 1, type=int)
     vehicles = Vehicle.query.filter_by(status='pending').order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
+    
+    # 在会话中记录当前页面为待审核页面
+    session['vehicle_list_source'] = 'pending'
+    
     return render_template('vehicle/license_plate/pending.html', vehicles=vehicles)
 
 @bp.route('/add', methods=['GET', 'POST'])
@@ -90,7 +79,7 @@ def edit(id):
     if not current_user.is_admin and vehicle.user_id != current_user.id:
         flash('您没有权限编辑此车辆信息')
         return redirect(url_for('license_plate.index'))
-        
+    
     form = VehicleForm(obj=vehicle)
     if form.validate_on_submit():
         # 检查新车牌号是否与其他记录重复
@@ -112,10 +101,12 @@ def edit(id):
             db.session.commit()
             flash('车辆信息已更新')
             
-            # 根据来源页面决定跳转目标
-            if request.referrer and 'pending' in request.referrer:
+            # 根据会话中记录的来源页面决定跳转目标
+            source = session.get('vehicle_list_source', 'index')
+            if source == 'pending':
                 return redirect(url_for('license_plate.pending'))
-            return redirect(url_for('license_plate.index'))
+            else:
+                return redirect(url_for('license_plate.index'))
             
         except Exception as e:
             db.session.rollback()

@@ -1,1 +1,1 @@
-# CDAMS
+# CHIDA Administrative Management System (CDAMS)
