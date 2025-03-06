@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">{% if section == 'password' %}修改密码{% else %}个人资料{% endif %}</h2>
+    <div class="card">
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('user.settings', section=section) }}">
+                {{ form.hidden_tag() }}
+                {% if not section or section == 'profile' %}
+                <div class="mb-3">
+                    {{ form.employee_id.label(class="form-label") }}
+                    {{ form.employee_id(class="form-control") }}
+                    {% if form.employee_id.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.employee_id.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.name.label(class="form-label") }}
+                    {{ form.name(class="form-control") }}
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.name.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control") }}
+                    {% if form.username.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.username.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.email.label(class="form-label") }}
+                    {{ form.email(class="form-control") }}
+                    {% if form.email.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.email.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.department.label(class="form-label") }}
+                    {{ form.department(class="form-control") }}
+                    {% if form.department.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.department.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.phone.label(class="form-label") }}
+                    {{ form.phone(class="form-control") }}
+                    {% if form.phone.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.phone.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <small>请输入当前密码和新密码</small>
+                </div>
+                <div class="mb-3">
+                    {{ form.current_password.label(class="form-label") }}
+                    {{ form.current_password(class="form-control") }}
+                    {% if form.current_password.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.current_password.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.new_password.label(class="form-label") }}
+                    {{ form.new_password(class="form-control") }}
+                    {% if form.new_password.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.new_password.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    {{ form.confirm_password.label(class="form-label") }}
+                    {{ form.confirm_password(class="form-control") }}
+                    {% if form.confirm_password.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.confirm_password.errors %}
+                        <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+                <div class="text-end">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

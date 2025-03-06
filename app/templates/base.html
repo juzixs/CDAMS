@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行政管理系统</title>
+    <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            background-color: #f8f9fa;
+            width: 250px;  /* 固定侧边栏宽度 */
+        }
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: .5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        .navbar {
+            z-index: 1000;
+        }
+        .main-content {
+            margin-left: 250px;  /* 与侧边栏宽度相同 */
+            padding: 60px 30px 20px;  /* 调整内容区域的内边距 */
+            min-height: 100vh;  /* 确保内容区域至少占满整个视口高度 */
+            width: calc(100% - 250px);  /* 确保内容区域不会超出右边界 */
+        }
+        .nav-link {
+            color: #333;
+            padding: 0.5rem 1rem;
+        }
+        .nav-link:hover {
+            background-color: #e9ecef;
+        }
+        .nav-link.active {
+            color: #007bff;
+            background-color: #e9ecef;
+        }
+        .sidebar .nav-item {
+            width: 100%;
+        }
+        .sidebar .nav-link i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        /* 子菜单样式 */
+        .sidebar .collapse .nav-link {
+            padding-left: 2.5rem;
+            font-size: 0.9rem;
+        }
+        .sidebar .collapse .nav-link i {
+            font-size: 0.85rem;
+        }
+        .sidebar .nav-link[data-bs-toggle="collapse"] {
+            position: relative;
+        }
+        .sidebar .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down {
+            transition: transform 0.2s;
+            font-size: 0.8rem;
+        }
+        .sidebar .nav-link[aria-expanded="true"] i.fa-chevron-down {
+            transform: rotate(180deg);
+        }
+        .sidebar .collapse {
+            background-color: rgba(0, 0, 0, 0.03);
+        }
+        /* 导航栏样式优化 */
+        .navbar-dark .navbar-nav .nav-link {
+            color: rgba(255, 255, 255, 0.9) !important;
+            padding: 0.5rem 1rem;
+            margin: 0 0.2rem;
+        }
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #fff !important;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        .navbar-dark .navbar-brand {
+            color: #fff !important;
+            font-weight: 500;
+        }
+        .navbar .nav-item {
+            display: flex;
+            align-items: center;
+        }
+        .navbar-nav .nav-link i {
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('license_plate.index') }}">
+                <i class="fas fa-building"></i> 行政管理系统
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- 左侧导航项 -->
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('license_plate.index') }}">
+                            <i class="fas fa-home"></i> 首页
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- 右侧导航项 -->
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item">
+                            <span class="nav-link">
+                                <i class="fas fa-user-circle"></i> 
+                                {% if current_user.name %}
+                                    {{ current_user.name }}
+                                {% else %}
+                                    {{ current_user.username }}
+                                {% endif %}
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('user.profile') }}">
+                                <i class="fas fa-user"></i> 个人资料
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> 退出
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('auth.login') }}">
+                                <i class="fas fa-sign-in-alt"></i> 登录
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 左侧导航栏 -->
+    {% if current_user.is_authenticated %}
+    <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+        <div class="sidebar-sticky">
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('budget') %}active{% endif %}" href="#">
+                        <i class="fas fa-coins"></i> 预算管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('asset') %}active{% endif %}" href="#">
+                        <i class="fas fa-box"></i> 固定资产
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('office') %}active{% endif %}" href="#">
+                        <i class="fas fa-pencil-alt"></i> 办公用品
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('beverage') %}active{% endif %}" href="#">
+                        <i class="fas fa-wine-bottle"></i> 酒水管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('license_plate') or request.endpoint.startswith('official_car') %}active{% endif %}" 
+                       data-bs-toggle="collapse" 
+                       href="#vehicleSubmenu" 
+                       role="button" 
+                       aria-expanded="{% if request.endpoint.startswith('license_plate') or request.endpoint.startswith('official_car') %}true{% else %}false{% endif %}" 
+                       aria-controls="vehicleSubmenu">
+                        <i class="fas fa-car"></i> 车辆管理
+                        <i class="fas fa-chevron-down float-end mt-1"></i>
+                    </a>
+                    <div class="collapse {% if request.endpoint.startswith('license_plate') or request.endpoint.startswith('official_car') %}show{% endif %}" id="vehicleSubmenu">
+                        <ul class="nav flex-column ms-3">
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint.startswith('official_car') %}active{% endif %}" 
+                                   href="{{ url_for('official_car.index') }}">
+                                    <i class="fas fa-car"></i> 公务车辆
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint.startswith('license_plate') %}active{% endif %}" 
+                                   href="{{ url_for('license_plate.index') }}">
+                                    <i class="fas fa-id-card"></i> 车辆通行证管理
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('dormitory') %}active{% endif %}" href="#">
+                        <i class="fas fa-bed"></i> 宿舍管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('canteen') %}active{% endif %}" href="#">
+                        <i class="fas fa-utensils"></i> 食堂管理
+                    </a>
+                </li>
+                {% if current_user.is_admin %}
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('user') and request.endpoint != 'user.profile' and request.endpoint != 'user.password' %}active{% endif %}" href="{{ url_for('user.users') }}">
+                        <i class="fas fa-users"></i> 用户管理
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}">
+                        <i class="fas fa-cog"></i> 系统设置
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                <span>用户设置</span>
+            </h6>
+            <ul class="nav flex-column mb-2">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'user.profile' %}active{% endif %}" href="{{ url_for('user.profile') }}">
+                        <i class="fas fa-user-cog"></i> 个人资料
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint == 'user.password' %}active{% endif %}" href="{{ url_for('user.password') }}">
+                        <i class="fas fa-key"></i> 修改密码
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- 主要内容区域 -->
+    <main class="{% if current_user.is_authenticated %}main-content{% else %}container mt-5{% endif %}">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 

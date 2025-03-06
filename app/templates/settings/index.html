@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>系统设置</h2>
+    
+    <ul class="nav nav-tabs mb-3" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="global-tab" data-bs-toggle="tab" data-bs-target="#global" type="button" role="tab" aria-controls="global" aria-selected="true">
+                <i class="fas fa-globe"></i> 全局设置
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
+                <i class="fas fa-money-bill"></i> 预算管理
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="asset-tab" data-bs-toggle="tab" data-bs-target="#asset" type="button" role="tab" aria-controls="asset" aria-selected="false">
+                <i class="fas fa-building"></i> 固定资产
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="office-tab" data-bs-toggle="tab" data-bs-target="#office" type="button" role="tab" aria-controls="office" aria-selected="false">
+                <i class="fas fa-box"></i> 办公用品
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="beverage-tab" data-bs-toggle="tab" data-bs-target="#beverage" type="button" role="tab" aria-controls="beverage" aria-selected="false">
+                <i class="fas fa-wine-bottle"></i> 酒水管理
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="vehicle-tab" data-bs-toggle="tab" data-bs-target="#vehicle" type="button" role="tab" aria-controls="vehicle" aria-selected="false">
+                <i class="fas fa-car"></i> 车辆管理
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="dormitory-tab" data-bs-toggle="tab" data-bs-target="#dormitory" type="button" role="tab" aria-controls="dormitory" aria-selected="false">
+                <i class="fas fa-bed"></i> 宿舍管理
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="canteen-tab" data-bs-toggle="tab" data-bs-target="#canteen" type="button" role="tab" aria-controls="canteen" aria-selected="false">
+                <i class="fas fa-utensils"></i> 食堂管理
+            </button>
+        </li>
+    </ul>
+    
+    <div class="tab-content" id="settingsTabContent">
+        <!-- 全局设置 -->
+        <div class="tab-pane fade show active" id="global" role="tabpanel" aria-labelledby="global-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">全局设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 预算管理设置 -->
+        <div class="tab-pane fade" id="budget" role="tabpanel" aria-labelledby="budget-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">预算管理设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 固定资产设置 -->
+        <div class="tab-pane fade" id="asset" role="tabpanel" aria-labelledby="asset-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">固定资产设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 办公用品设置 -->
+        <div class="tab-pane fade" id="office" role="tabpanel" aria-labelledby="office-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">办公用品设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 酒水管理设置 -->
+        <div class="tab-pane fade" id="beverage" role="tabpanel" aria-labelledby="beverage-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">酒水管理设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 车辆管理设置 -->
+        <div class="tab-pane fade" id="vehicle" role="tabpanel" aria-labelledby="vehicle-tab">
+            <div class="accordion" id="vehicleSettingsAccordion">
+                <!-- 车牌管理设置 -->
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingLicensePlate">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLicensePlate" aria-expanded="true" aria-controls="collapseLicensePlate">
+                            <i class="fas fa-id-card me-2"></i> 车辆通行证管理
+                        </button>
+                    </h2>
+                    <div id="collapseLicensePlate" class="accordion-collapse collapse show" aria-labelledby="headingLicensePlate">
+                        <div class="accordion-body">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <form method="post" enctype="multipart/form-data">
+                                        {{ form.hidden_tag() }}
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h5 class="card-title">通行证PDF设置</h5>
+                                                
+                                                <div class="mb-3">
+                                                    {{ form.background_image.label(class="form-label") }}
+                                                    {{ form.background_image(class="form-control") }}
+                                                    {% if form.background_image.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.background_image.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if settings and settings.background_image %}
+                                                    <small class="text-muted">当前背景图: {{ settings.background_image }}</small>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    {{ form.font_family.label(class="form-label") }}
+                                                    {{ form.font_family(class="form-control") }}
+                                                    {% if form.font_family.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.font_family.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    {% if settings and settings.font_path %}
+                                                    <small class="text-muted">当前字体: {{ settings.font_path }}</small>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    {{ form.font_size.label(class="form-label") }}
+                                                    {{ form.font_size(class="form-control") }}
+                                                    {% if form.font_size.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.font_size.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="mb-3">
+                                                            {{ form.text_x.label(class="form-label") }}
+                                                            {{ form.text_x(class="form-control") }}
+                                                            {% if form.text_x.errors %}
+                                                            <div class="alert alert-danger">
+                                                                {% for error in form.text_x.errors %}
+                                                                <span>{{ error }}</span>
+                                                                {% endfor %}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="mb-3">
+                                                            {{ form.text_y.label(class="form-label") }}
+                                                            {{ form.text_y(class="form-control") }}
+                                                            {% if form.text_y.errors %}
+                                                            <div class="alert alert-danger">
+                                                                {% for error in form.text_y.errors %}
+                                                                <span>{{ error }}</span>
+                                                                {% endfor %}
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    {{ form.text_color.label(class="form-label") }}
+                                                    {{ form.text_color(class="form-control") }}
+                                                    {% if form.text_color.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.text_color.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <small class="text-muted">{{ form.text_color.description }}</small>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    {{ form.outline_color.label(class="form-label") }}
+                                                    {{ form.outline_color(class="form-control") }}
+                                                    {% if form.outline_color.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.outline_color.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                    <small class="text-muted">{{ form.outline_color.description }}</small>
+                                                </div>
+
+                                                <div class="mb-3">
+                                                    {{ form.outline_width.label(class="form-label") }}
+                                                    {{ form.outline_width(class="form-control") }}
+                                                    {% if form.outline_width.errors %}
+                                                    <div class="alert alert-danger">
+                                                        {% for error in form.outline_width.errors %}
+                                                        <span>{{ error }}</span>
+                                                        {% endfor %}
+                                                    </div>
+                                                    {% endif %}
+                                                </div>
+
+                                                <div class="d-flex justify-content-between">
+                                                    <a href="{{ url_for('settings.reset_defaults') }}" 
+                                                       class="btn btn-secondary"
+                                                       onclick="event.preventDefault(); 
+                                                                if(confirm('确定要恢复默认设置吗？')) {
+                                                                    document.getElementById('reset-form').submit();
+                                                                }">
+                                                        <i class="fas fa-undo"></i> 恢复默认设置
+                                                    </a>
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save"></i> 保存设置
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </form>
+                                    <form id="reset-form" action="{{ url_for('settings.reset_defaults') }}" method="post" style="display: none;"></form>
+                                </div>
+                                
+                                <div class="col-md-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">默认设置参考</h5>
+                                            <ul class="list-unstyled">
+                                                <li><i class="fas fa-font"></i> 字体文件：Dengb.ttf</li>
+                                                <li><i class="fas fa-text-height"></i> 字体大小：230</li>
+                                                <li><i class="fas fa-palette"></i> 文字颜色：255,0,0（红色）</li>
+                                                <li><i class="fas fa-border-style"></i> 描边颜色：255,0,0（红色）</li>
+                                                <li><i class="fas fa-border-none"></i> 描边宽度：0</li>
+                                                <li><i class="fas fa-arrows-alt"></i> 文字位置：X=1500, Y=930</li>
+                                                <li><i class="fas fa-image"></i> 背景图片：bj.png</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 宿舍管理设置 -->
+        <div class="tab-pane fade" id="dormitory" role="tabpanel" aria-labelledby="dormitory-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">宿舍管理设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 食堂管理设置 -->
+        <div class="tab-pane fade" id="canteen" role="tabpanel" aria-labelledby="canteen-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">食堂管理设置</h5>
+                    <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 初始化所有标签页
+    var tabElements = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabElements.forEach(function(tabElement) {
+        new bootstrap.Tab(tabElement);
+    });
+
+    // 初始化所有折叠面板
+    var collapseElements = document.querySelectorAll('.collapse');
+    collapseElements.forEach(function(collapseElement) {
+        new bootstrap.Collapse(collapseElement, {
+            toggle: false
+        });
+    });
+
+    // 为标签页添加点击事件监听
+    var tabs = document.querySelectorAll('#settingsTabs button');
+    tabs.forEach(function(tab) {
+        tab.addEventListener('click', function(event) {
+            event.preventDefault();
+            var tab = new bootstrap.Tab(this);
+            tab.show();
+        });
+    });
+});
+</script>
+{% endblock %} 

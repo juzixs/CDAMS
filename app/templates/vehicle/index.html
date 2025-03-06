@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>车辆管理</h1>
+    <div class="btn-group">
+        <a href="{{ url_for('vehicle.add') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 添加车辆
+        </a>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="fas fa-file-import"></i> 导入Excel
+        </button>
+        <a href="{{ url_for('vehicle.export', status=request.args.get('status', ''), 
+                                            vehicle_type=request.args.get('vehicle_type', ''),
+                                            department=request.args.get('department', ''),
+                                            search=request.args.get('search', '')) }}" 
+           class="btn btn-info">
+            <i class="fas fa-file-export"></i> 导出Excel
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control" placeholder="搜索车牌号/车主/部门..." value="{{ request.args.get('search', '') }}">
+            </div>
+            <div class="col-md-2">
+                <select name="status" class="form-select">
+                    <option value="">所有状态</option>
+                    <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待审核</option>
+                    <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>已审核</option>
+                    <option value="rejected" {% if request.args.get('status') == 'rejected' %}selected{% endif %}>已拒绝</option>
+                    <option value="issued" {% if request.args.get('status') == 'issued' %}selected{% endif %}>已发放</option>
+                    <option value="not_issued" {% if request.args.get('status') == 'not_issued' %}selected{% endif %}>未发放</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="vehicle_type" class="form-select">
+                    <option value="">所有类型</option>
+                    <option value="燃油" {% if request.args.get('vehicle_type') == '燃油' %}selected{% endif %}>燃油</option>
+                    <option value="新能源" {% if request.args.get('vehicle_type') == '新能源' %}selected{% endif %}>新能源</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="department" class="form-control" placeholder="部门" value="{{ request.args.get('department', '') }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-secondary w-100">
+                    <i class="fas fa-search"></i> 搜索
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="vehicleForm" method="post" action="{{ url_for('vehicle.generate_pdf') }}">
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th><input type="checkbox" id="selectAll"></th>
+                    <th>车牌号</th>
+                    <th>车辆类型</th>
+                    <th>车主姓名</th>
+                    <th>所属部门</th>
+                    <th>备注</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>发放时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vehicle in vehicles.items %}
+                <tr>
+                    <td><input type="checkbox" name="vehicle_ids[]" value="{{ vehicle.id }}"></td>
+                    <td>{{ vehicle.plate_number }}</td>
+                    <td>{{ vehicle.vehicle_type }}</td>
+                    <td>{{ vehicle.owner_name }}</td>
+                    <td>{{ vehicle.department }}</td>
+                    <td>{{ vehicle.remarks or '-' }}</td>
+                    <td>
+                        {% if vehicle.status == 'pending' %}
+                        <span class="badge bg-warning">待审核</span>
+                        {% elif vehicle.status == 'approved' %}
+                        <span class="badge bg-success">已审核</span>
+                        {% else %}
+                        <span class="badge bg-danger">已拒绝</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ vehicle.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ vehicle.issued_at.strftime('%Y-%m-%d %H:%M') if vehicle.issued_at else '-' }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('vehicle.edit', id=vehicle.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="{{ url_for('vehicle.delete', id=vehicle.id) }}" class="btn btn-sm btn-danger" 
+                               onclick="return confirm('确定要删除这条记录吗？')">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                            {% if current_user.is_admin %}
+                            <a href="{{ url_for('vehicle.issue', id=vehicle.id) }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i> 发放
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if vehicles.items %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <button type="submit" class="btn btn-primary" id="generatePdf">
+            <i class="fas fa-file-pdf"></i> 生成选中车牌PDF
+        </button>
+        
+        <nav>
+            <ul class="pagination">
+                {% for page in vehicles.iter_pages() %}
+                    {% if page %}
+                        <li class="page-item {% if page == vehicles.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('vehicle.index', page=page, **request.args) }}">{{ page }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </nav>
+    </div>
+    {% else %}
+    <div class="alert alert-info">暂无车辆记录</div>
+    {% endif %}
+</form>
+
+<!-- 导入模态框 -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导入车辆数据</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">选择Excel文件</label>
+                        <input type="file" class="form-control" name="file" accept=".xlsx" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>导入说明：</h6>
+                        <ul class="mb-0">
+                            <li>仅支持.xlsx格式的Excel文件</li>
+                            <li>必填字段：车牌号、车辆类型、车主姓名、所属部门</li>
+                            <li>车辆类型必须为：燃油或新能源</li>
+                            <li>车牌号不能重复</li>
+                        </ul>
+                    </div>
+                    <div id="importResult" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="importSubmit">导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#selectAll').change(function() {
+        $('input[name="vehicle_ids[]"]').prop('checked', $(this).prop('checked'));
+    });
+
+    $('#generatePdf').click(function(e) {
+        e.preventDefault();
+        if ($('input[name="vehicle_ids[]"]:checked').length === 0) {
+            alert('请至少选择一个车牌');
+            return;
+        }
+        $('#vehicleForm').submit();
+    });
+
+    // 导入功能
+    $('#importSubmit').click(function() {
+        var formData = new FormData($('#importForm')[0]);
+        
+        $.ajax({
+            url: '{{ url_for("vehicle.import_vehicles") }}',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                var resultHtml = '<div class="mt-3">';
+                
+                if (response.message) {
+                    resultHtml += '<div class="alert alert-success">' + response.message + '</div>';
+                }
+                
+                if (response.error) {
+                    resultHtml += '<div class="alert alert-danger">' + response.error + '</div>';
+                }
+                
+                if (response.error_messages && response.error_messages.length > 0) {
+                    resultHtml += '<div class="alert alert-warning"><ul class="mb-0">';
+                    response.error_messages.forEach(function(msg) {
+                        resultHtml += '<li>' + msg + '</li>';
+                    });
+                    resultHtml += '</ul></div>';
+                }
+                
+                resultHtml += '</div>';
+                
+                $('#importResult').html(resultHtml).show();
+                
+                if (response.success_count > 0) {
+                    setTimeout(function() {
+                        location.reload();
+                    }, 2000);
+                }
+            },
+            error: function(xhr) {
+                var error = xhr.responseJSON ? xhr.responseJSON.error : '导入失败';
+                $('#importResult').html(
+                    '<div class="alert alert-danger mt-3">' + error + '</div>'
+                ).show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

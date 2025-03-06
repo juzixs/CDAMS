@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">系统设置</h1>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">车辆通行证PDF设置</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {{ form.csrf_token }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.background_image.label(class="form-label") }}
+                            {{ form.background_image(class="form-control") }}
+                            {% if form.background_image.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.background_image.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if settings and settings.background_image %}
+                            <small class="text-muted">当前背景图: {{ settings.background_image }}</small>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.font_family.label(class="form-label") }}
+                            {{ form.font_family(class="form-control") }}
+                            {% if form.font_family.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.font_family.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            {% if settings and settings.font_family %}
+                            <small class="text-muted">当前字体: {{ settings.font_family }}</small>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.font_size.label(class="form-label") }}
+                            {{ form.font_size(class="form-control", type="number") }}
+                            {% if form.font_size.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.font_size.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.font_bold(class="form-check-input") }}
+                                {{ form.font_bold.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.text_color.label(class="form-label") }}
+                            {{ form.text_color(class="form-control") }}
+                            <small class="text-muted">{{ form.text_color.description }}</small>
+                            {% if form.text_color.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.text_color.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.text_x.label(class="form-label") }}
+                            {{ form.text_x(class="form-control", type="number") }}
+                            {% if form.text_x.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.text_x.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.text_y.label(class="form-label") }}
+                            {{ form.text_y(class="form-control", type="number") }}
+                            {% if form.text_y.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.text_y.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

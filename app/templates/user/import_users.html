@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0">导入用户</h3>
+                    <a href="{{ url_for('user.users') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回用户列表
+                    </a>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h5>导入说明：</h5>
+                        <ol>
+                            <li>请使用CSV格式文件进行导入</li>
+                            <li>CSV文件第一行为表头，格式为：用户名,邮箱,工号,姓名,部门,手机,管理员权限</li>
+                            <li>管理员权限列填写"是"或"否"</li>
+                            <li>导入的用户初始密码将设置为与工号相同</li>
+                            <li>用户名、邮箱和工号不能与现有用户重复</li>
+                        </ol>
+                        <p>您可以先<a href="{{ url_for('user.export_users') }}" class="alert-link">导出用户</a>获取模板，然后按照模板格式添加新用户。</p>
+                    </div>
+                    
+                    <form method="post" action="{{ url_for('user.import_users') }}" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">选择CSV文件</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-file-import"></i> 开始导入
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="card-title">CSV文件示例</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>邮箱</th>
+                                    <th>工号</th>
+                                    <th>姓名</th>
+                                    <th>部门</th>
+                                    <th>手机</th>
+                                    <th>管理员权限</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>zhangsan</td>
+                                    <td>zhangsan@example.com</td>
+                                    <td>EMP001</td>
+                                    <td>张三</td>
+                                    <td>技术部</td>
+                                    <td>13800138000</td>
+                                    <td>否</td>
+                                </tr>
+                                <tr>
+                                    <td>lisi</td>
+                                    <td>lisi@example.com</td>
+                                    <td>EMP002</td>
+                                    <td>李四</td>
+                                    <td>人事部</td>
+                                    <td>13900139000</td>
+                                    <td>是</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
