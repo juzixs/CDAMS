@@ -49,7 +49,20 @@
             <!-- 搜索筛选表单 -->
             <form method="get" action="{{ url_for('dormitory.view_dormitory', dormitory_id=dormitory.id) }}" class="mb-4">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <label for="room_number" class="form-label">房间号</label>
+                        <input type="text" class="form-control" id="room_number" name="room_number" value="{{ room_number }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="floor" class="form-label">楼层</label>
+                        <select class="form-select" id="floor" name="floor">
+                            <option value="">全部</option>
+                            {% for floor_num in floors %}
+                            <option value="{{ floor_num }}" {% if floor == floor_num %}selected{% endif %}>{{ floor_num }}层</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label for="room_type" class="form-label">房间类型</label>
                         <select class="form-select" id="room_type" name="room_type">
                             <option value="">全部</option>
@@ -58,17 +71,21 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label for="resident_name" class="form-label">住户姓名</label>
                         <input type="text" class="form-control" id="resident_name" name="resident_name" value="{{ resident_name }}">
                     </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <div class="form-check mb-2 me-3">
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="available_only" name="available_only" {% if available_only %}checked{% endif %}>
                             <label class="form-check-label" for="available_only">
                                 只显示未住满
                             </label>
                         </div>
+                    </div>
+                    <div class="col-md-6 text-end">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i> 搜索
                         </button>
@@ -78,6 +95,33 @@
                     </div>
                 </div>
             </form>
+
+            <!-- 搜索结果提示 -->
+            {% if room_number or floor or room_type or resident_name or available_only %}
+            <div class="alert alert-info mb-4">
+                <h5><i class="fas fa-info-circle"></i> 搜索结果</h5>
+                <div class="d-flex flex-wrap gap-2">
+                    {% if room_number %}
+                    <span class="badge bg-primary">房间号: {{ room_number }}</span>
+                    {% endif %}
+                    {% if floor %}
+                    <span class="badge bg-primary">楼层: {{ floor }}层</span>
+                    {% endif %}
+                    {% if room_type %}
+                    <span class="badge bg-primary">房间类型: {{ room_type }}</span>
+                    {% endif %}
+                    {% if resident_name %}
+                    <span class="badge bg-primary">住户姓名: {{ resident_name }}</span>
+                    {% endif %}
+                    {% if available_only %}
+                    <span class="badge bg-primary">只显示未住满</span>
+                    {% endif %}
+                </div>
+                <div class="mt-2">
+                    找到 {{ rooms|length }} 个符合条件的房间
+                </div>
+            </div>
+            {% endif %}
 
             {% if rooms %}
             <div class="row">

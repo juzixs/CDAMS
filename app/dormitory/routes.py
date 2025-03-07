@@ -13,6 +13,7 @@ def index():
     """宿舍管理首页"""
     # 获取搜索参数
     search_name = request.args.get('search_name', '')
+    floor = request.args.get('floor', '')
     room_type = request.args.get('room_type', '')
     resident_name = request.args.get('resident_name', '')
     available_only = request.args.get('available_only') == 'on'
@@ -28,66 +29,91 @@ def index():
         # 获取所有宿舍，按创建时间升序排序（早添加的在前面）
         dormitories = query.order_by(Dormitory.created_at.asc()).all()
         
-        # 如果需要按房间类型或住户名称筛选，或只显示未住满的房间，需要在Python中进行过滤
-        if room_type or resident_name or available_only:
-            filtered_dormitories = []
-            for dormitory in dormitories:
-                # 获取宿舍的所有房间
-                rooms = Room.query.filter_by(dormitory_id=dormitory.id).all()
-                
-                # 按房间类型筛选
-                if room_type:
-                    rooms = [room for room in rooms if room.room_type == room_type]
-                
-                # 按住户名称筛选
-                if resident_name:
-                    filtered_rooms = []
-                    for room in rooms:
-                        residents = Resident.query.filter_by(room_id=room.id, checkout_date=None).all()
-                        if any(resident_name.lower() in resident.name.lower() for resident in residents):
-                            filtered_rooms.append(room)
-                    rooms = filtered_rooms
-                
-                # 只显示未住满的房间
-                if available_only:
-                    rooms = [room for room in rooms if not room.is_full]
-                
-                # 如果宿舍有符合条件的房间，则添加到结果中
-                if rooms:
-                    filtered_dormitories.append(dormitory)
+        # 存储过滤后的宿舍和房间
+        filtered_dormitories = []
+        filtered_rooms_by_dormitory = {}
+        is_filtered = floor or room_type or resident_name or available_only
+        
+        # 处理宿舍和房间筛选
+        for dormitory in dormitories:
+            # 获取宿舍的所有房间
+            rooms = Room.query.filter_by(dormitory_id=dormitory.id).all()
             
-            dormitories = filtered_dormitories
+            # 如果没有应用过滤条件，则所有宿舍都显示，房间使用原始列表
+            if not is_filtered:
+                filtered_dormitories.append(dormitory)
+                filtered_rooms_by_dormitory[dormitory.id] = rooms
+                continue
+                
+            # 以下是应用过滤条件的逻辑
+            filtered_rooms = rooms.copy()
+            
+            # 按楼层筛选
+            if floor:
+                filtered_rooms = [room for room in filtered_rooms if str(room.floor) == floor]
+            
+            # 按房间类型筛选
+            if room_type:
+                filtered_rooms = [room for room in filtered_rooms if room.room_type == room_type]
+            
+            # 按住户名称筛选
+            if resident_name:
+                temp_rooms = []
+                for room in filtered_rooms:
+                    residents = Resident.query.filter_by(room_id=room.id, checkout_date=None).all()
+                    if any(resident_name.lower() in resident.name.lower() for resident in residents):
+                        temp_rooms.append(room)
+                filtered_rooms = temp_rooms
+            
+            # 只显示未住满的房间
+            if available_only:
+                filtered_rooms = [room for room in filtered_rooms if not room.is_full]
+            
+            # 如果宿舍有符合条件的房间，则添加到结果中
+            if filtered_rooms:
+                filtered_dormitories.append(dormitory)
+                filtered_rooms_by_dormitory[dormitory.id] = filtered_rooms
         
         # 获取所有房间类型，用于下拉选择
         room_types = db.session.query(Room.room_type).distinct().all()
         room_types = [r[0] for r in room_types if r[0]]
         
+        # 获取所有楼层
+        floors = db.session.query(Room.floor).distinct().order_by(Room.floor).all()
+        floors = [str(f[0]) for f in floors if f[0]]
+        
         current_app.logger.info(f'获取到的宿舍数量: {len(dormitories)}')
-        for dorm in dormitories:
-            current_app.logger.info(f'宿舍信息: ID={dorm.id}, 名称={dorm.name}, 创建时间={dorm.created_at}')
         
         form = DormitoryForm()
         return render_template('dormitory/index.html', 
-                            dormitories=dormitories,
+                            dormitories=filtered_dormitories,
+                            filtered_rooms_by_dormitory=filtered_rooms_by_dormitory,
                             form=form,
                             search_name=search_name,
+                            floor=floor,
+                            floors=floors,
                             room_type=room_type,
                             room_types=room_types,
                             resident_name=resident_name,
                             available_only=available_only,
-                            Resident=Resident)
+                            Resident=Resident,
+                            is_filtered=is_filtered)
     except Exception as e:
         current_app.logger.error(f'获取宿舍列表失败: {str(e)}')
         flash('获取宿舍列表失败，请刷新页面重试', 'danger')
         return render_template('dormitory/index.html',
                             dormitories=[],
+                            filtered_rooms_by_dormitory={},
                             form=form,
                             search_name=search_name,
+                            floor=floor,
+                            floors=[],
                             room_type=room_type,
                             room_types=[],
                             resident_name=resident_name,
                             available_only=available_only,
-                            Resident=Resident)
+                            Resident=Resident,
+                            is_filtered=False)
 
 @bp.route('/add_dormitory', methods=['POST'])
 @login_required
@@ -171,12 +197,22 @@ def view_dormitory(dormitory_id):
     room_form = RoomForm()
     
     # 获取搜索参数
+    room_number = request.args.get('room_number', '')
+    floor = request.args.get('floor', '')
     room_type = request.args.get('room_type', '')
     resident_name = request.args.get('resident_name', '')
     available_only = request.args.get('available_only') == 'on'
     
     # 获取宿舍的所有房间
     rooms = Room.query.filter_by(dormitory_id=dormitory_id)
+    
+    # 按房间号筛选
+    if room_number:
+        rooms = rooms.filter(Room.room_number.like(f'%{room_number}%'))
+    
+    # 按楼层筛选
+    if floor:
+        rooms = rooms.filter(Room.floor == floor)
     
     # 按房间类型筛选
     if room_type:
@@ -206,11 +242,18 @@ def view_dormitory(dormitory_id):
     room_types = db.session.query(Room.room_type).filter(Room.dormitory_id == dormitory_id).distinct().all()
     room_types = [r[0] for r in room_types if r[0]]
     
+    # 获取所有楼层
+    floors = db.session.query(Room.floor).filter(Room.dormitory_id == dormitory_id).distinct().order_by(Room.floor).all()
+    floors = [str(f[0]) for f in floors if f[0]]
+    
     return render_template('dormitory/view.html', 
                           dormitory=dormitory, 
                           rooms=rooms, 
                           room_form=room_form, 
                           Resident=Resident,
+                          room_number=room_number,
+                          floor=floor,
+                          floors=floors,
                           room_type=room_type,
                           room_types=room_types,
                           resident_name=resident_name,
