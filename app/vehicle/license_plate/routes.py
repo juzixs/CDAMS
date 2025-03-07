@@ -18,7 +18,7 @@ class EmptyForm(FlaskForm):
 @bp.route('/')
 @login_required
 def index():
-    """车辆通行证管理首页"""
+    """车辆通行证首页"""
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     status = request.args.get('status', '')
@@ -47,7 +47,7 @@ def index():
     
     vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
     
-    # 在会话中记录当前页面为车辆通行证管理页面
+    # 在会话中记录当前页面为车辆通行证页面
     session['vehicle_list_source'] = 'index'
     
     # 创建空表单用于CSRF保护
