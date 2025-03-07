@@ -339,14 +339,14 @@ def batch_action():
         for vehicle in vehicles:
             vehicle.status = 'approved'
         db.session.commit()
-        flash('所有待审核车牌已通过')
+        flash('已通过所有待审核车辆')
     elif action == 'reject_all':
         # 全部拒绝
         vehicles = Vehicle.query.filter_by(status='pending').all()
         for vehicle in vehicles:
             vehicle.status = 'rejected'
         db.session.commit()
-        flash('所有待审核车牌已拒绝')
+        flash('已拒绝所有待审核车辆')
     elif action in ['batch_approve', 'batch_reject']:
         # 批量操作选中项
         vehicle_ids = request.form.getlist('vehicle_ids[]')
@@ -359,7 +359,8 @@ def batch_action():
         for vehicle in vehicles:
             vehicle.status = status
         db.session.commit()
-        flash(f'已{status}选中的车牌')
+        message = '已通过选择的车辆' if status == 'approved' else '已拒绝选择的车辆'
+        flash(message)
     
     return redirect(url_for('license_plate.pending'))
 
