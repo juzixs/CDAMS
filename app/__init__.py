@@ -1,5 +1,5 @@
 import os
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
 from flask_login import current_user
 from config import Config
 from app.extensions import db, migrate, login_manager, csrf
@@ -61,9 +61,7 @@ def create_app(config_class=Config):
 
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
-            return redirect(url_for('license_plate.index'))
-        return redirect(url_for('auth.login'))
+        return render_template('index.html', title='首页')
 
     return app
 
