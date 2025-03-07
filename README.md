@@ -1,48 +1,33 @@
-# CHIDA Administrative Management System (CDAMS)
+# CHIDA行政管理系统 (CDAMS)
+
+[![Python](https://img.shields.io/badge/Python-3.9+-yellow.svg)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-2.0+-green.svg)](https://flask.palletsprojects.com/)
+[![Bootstrap](https://img.shields.io/badge/Bootstrap-5.3-purple.svg)](https://getbootstrap.com/)
 
 ## 项目简介
-CDAMS（CHIDA行政管理系统）是一个综合性的企业行政管理平台，旨在提供高效、便捷的行政事务管理解决方案。
 
-## 主要功能模块
+CDAMS（CHIDA行政管理系统）是一个公司行政管理平台。
 
-### 1. 车辆管理系统
-- 车辆信息管理（新增、编辑、删除）
-- 车辆通行证批量管理
-- Excel导入导出功能
-- 车辆状态追踪（待审批、已审批、已驳回等）
-- PDF文档生成
-- 批量删除功能
-- 分页查询与筛选
+## 技术栈
 
-### 2. 宿舍管理系统
-- 宿舍楼管理
-- 房间信息管理
-- 住户信息管理
-  - 入住登记
-  - 退住手续
-  - 住户信息编辑
-- 宿舍长管理
-- 历史住户记录追踪
-- 房间使用状态监控
+- **后端框架**：Flask
+- **数据库**：SQLite（可扩展至MySQL/PostgreSQL）
+- **前端框架**：Bootstrap 5
+- **图标库**：Font Awesome
+- **表单处理**：Flask-WTF
+- **用户认证**：Flask-Login
+- **数据库迁移**：Flask-Migrate
 
-## 待实现功能
+## 核心特性
 
-### 1. 车辆管理系统
-- [ ] 车辆使用记录统计报表
-- [ ] 车辆维护保养提醒
-- [ ] 违章记录管理
-- [ ] 车辆定位追踪
+- **权限分级管理**：三级权限结构 (普通级、授权级、管理级)
+- **用户认证与授权**：安全的登录系统与模块访问权限控制
+- **响应式界面设计**：适配各种设备屏幕尺寸
+- **动态导航菜单**：根据用户权限动态显示功能模块
+- **数据导入导出**：支持Excel格式数据批量处理
+- **文档生成能力**：自动生成PDF格式报表和证件
 
-### 2. 宿舍管理系统
-- [ ] 水电费管理
-- [ ] 访客管理
-- [ ] 维修申请处理
-- [ ] 宿舍考勤管理
-- [ ] 卫生检查记录
 
-### 3. 系统通用功能
-- [ ] 消息通知系统
-- [ ] 移动端适配
-- [ ] 系统操作日志
-- [ ] 数据备份与恢复
-- [ ] 权限管理优化
+### 环境要求
+- Python 3.11+
+- pip
