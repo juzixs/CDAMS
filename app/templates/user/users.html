@@ -215,7 +215,7 @@
 
 <!-- 用户授权模态框 -->
 <div class="modal fade" id="authUserModal" tabindex="-1" aria-labelledby="authUserModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="authUserModalLabel">用户授权</h5>
@@ -236,6 +236,35 @@
                             </label>
                         </div>
                         <div class="form-text">管理员可以管理所有用户和系统设置</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">模块权限</label>
+                        <div class="alert alert-info">
+                            <small>
+                                <i class="fas fa-info-circle"></i> 权限说明：
+                                <ul class="mb-0">
+                                    <li>普通级模块：所有用户可访问</li>
+                                    <li>授权级模块：需要特别授权才能访问</li>
+                                    <li>管理级模块：仅管理员可访问</li>
+                                </ul>
+                            </small>
+                        </div>
+                        <div class="row">
+                            {% for module in modules %}
+                                {% if module.permission_level == 'authorized' %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input module-checkbox" type="checkbox" 
+                                               id="module_{{ module.id }}" name="module_ids" value="{{ module.id }}">
+                                        <label class="form-check-label" for="module_{{ module.id }}">
+                                            {{ module.name }}
+                                        </label>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -286,6 +315,27 @@
                 document.getElementById('authUserId').value = userId;
                 document.getElementById('authUsername').textContent = username;
                 document.getElementById('isAdmin').checked = isAdmin;
+                
+                // 重置所有模块复选框
+                document.querySelectorAll('.module-checkbox').forEach(checkbox => {
+                    checkbox.checked = false;
+                });
+                
+                // 获取用户的模块权限
+                fetch(`/user/get-user-modules/${userId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 设置用户已授权的模块
+                            data.module_ids.forEach(moduleId => {
+                                const checkbox = document.getElementById(`module_${moduleId}`);
+                                if (checkbox) {
+                                    checkbox.checked = true;
+                                }
+                            });
+                        }
+                    })
+                    .catch(error => console.error('获取用户模块权限失败:', error));
                 
                 authModal.show();
             });

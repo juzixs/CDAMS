@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.user import bp
 from app.forms import ProfileForm, PasswordForm, UserCreateForm, UserSearchForm
 from app.extensions import db
-from app.models import User
+from app.models import User, Module
 from werkzeug.security import generate_password_hash, check_password_hash
 import csv
 import io
@@ -56,13 +56,24 @@ def users():
         elif field == 'email':
             query = query.filter(User.email.like(f'%{keyword}%'))
     
-    # 根据排序方向构建查询
-    if order == 'desc':
-        users = query.order_by(sort_field.desc()).all()
+    # 应用排序
+    if order == 'asc':
+        query = query.order_by(sort_field.asc())
     else:
-        users = query.order_by(sort_field.asc()).all()
-
-    return render_template('user/users.html', users=users, sort_by=sort_by, order=order, search_form=search_form)
+        query = query.order_by(sort_field.desc())
+    
+    # 获取所有模块
+    modules = Module.query.all()
+    
+    # 获取用户列表
+    users = query.all()
+    
+    return render_template('user/users.html', 
+                          users=users, 
+                          search_form=search_form,
+                          sort_by=sort_by,
+                          order=order,
+                          modules=modules)
 
 @bp.route('/profile', methods=['GET', 'POST'])
 @bp.route('/profile/<int:user_id>', methods=['GET', 'POST'])
@@ -254,6 +265,21 @@ def batch_delete_users():
     
     return redirect(url_for('user.users'))
 
+@bp.route('/get-user-modules/<int:user_id>', methods=['GET'])
+@login_required
+def get_user_modules(user_id):
+    """获取用户的模块权限"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': '您没有权限执行此操作'})
+    
+    user = User.query.get_or_404(user_id)
+    module_ids = [module.id for module in user.authorized_modules]
+    
+    return jsonify({
+        'success': True,
+        'module_ids': module_ids
+    })
+
 @bp.route('/auth-user', methods=['POST'])
 @login_required
 def auth_user():
@@ -264,6 +290,7 @@ def auth_user():
     
     user_id = request.form.get('user_id')
     is_admin = 'is_admin' in request.form
+    module_ids = request.form.getlist('module_ids')
     
     if not user_id:
         flash('用户ID不能为空')
@@ -279,6 +306,12 @@ def auth_user():
     try:
         # 更新管理员权限
         user.is_admin = is_admin
+        
+        # 更新模块权限
+        user.authorized_modules = []
+        if module_ids:
+            modules = Module.query.filter(Module.id.in_(module_ids)).all()
+            user.authorized_modules = modules
         
         db.session.commit()
         flash(f'用户 {user.username} 的权限已更新')
