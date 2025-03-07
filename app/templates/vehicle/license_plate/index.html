@@ -186,9 +186,10 @@
             </div>
             <div class="modal-body">
                 <form id="importForm" enctype="multipart/form-data">
+                    {{ form.csrf_token }}
                     <div class="mb-3">
-                        <label class="form-label">选择Excel文件</label>
-                        <input type="file" class="form-control" name="file" accept=".xlsx" required>
+                        <label for="importFile" class="form-label">选择Excel文件</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx" required>
                     </div>
                     <div class="text-end mb-3">
                         <a href="{{ url_for('license_plate.import_template') }}" class="btn btn-outline-primary btn-sm">
@@ -281,6 +282,7 @@ $(document).ready(function() {
     // 导入功能
     $('#importSubmit').click(function() {
         var formData = new FormData($('#importForm')[0]);
+        formData.append('csrf_token', "{{ form.csrf_token._value() }}");
         
         $.ajax({
             url: '{{ url_for("license_plate.import_vehicles") }}',

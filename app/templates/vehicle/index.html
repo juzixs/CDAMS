@@ -60,7 +60,12 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAll"></th>
+                    <th>
+                        <label class="d-flex align-items-center">
+                            <input type="checkbox" id="selectAll" class="me-2">
+                            <span>全选</span>
+                        </label>
+                    </th>
                     <th>车牌号</th>
                     <th>车辆类型</th>
                     <th>车主姓名</th>
@@ -75,7 +80,11 @@
             <tbody>
                 {% for vehicle in vehicles.items %}
                 <tr>
-                    <td><input type="checkbox" name="vehicle_ids[]" value="{{ vehicle.id }}"></td>
+                    <td>
+                        <label class="d-flex align-items-center">
+                            <input type="checkbox" name="vehicle_ids[]" value="{{ vehicle.id }}" class="me-2">
+                        </label>
+                    </td>
                     <td>{{ vehicle.plate_number }}</td>
                     <td>{{ vehicle.vehicle_type }}</td>
                     <td>{{ vehicle.owner_name }}</td>
@@ -116,9 +125,14 @@
 
     {% if vehicles.items %}
     <div class="d-flex justify-content-between align-items-center mt-3">
-        <button type="submit" class="btn btn-primary" id="generatePdf">
-            <i class="fas fa-file-pdf"></i> 生成选中车牌PDF
-        </button>
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary" id="generatePdf">
+                <i class="fas fa-file-pdf"></i> 生成选中车牌PDF
+            </button>
+            <button type="button" class="btn btn-danger" id="batchDelete" disabled>
+                <i class="fas fa-trash"></i> 批量删除
+            </button>
+        </div>
         
         <nav>
             <ul class="pagination">
@@ -152,8 +166,8 @@
             <div class="modal-body">
                 <form id="importForm" enctype="multipart/form-data">
                     <div class="mb-3">
-                        <label class="form-label">选择Excel文件</label>
-                        <input type="file" class="form-control" name="file" accept=".xlsx" required>
+                        <label for="importFile" class="form-label">选择Excel文件</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx" required>
                     </div>
                     <div class="alert alert-info">
                         <h6>导入说明：</h6>
@@ -179,10 +193,24 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // 全选/取消全选
     $('#selectAll').change(function() {
         $('input[name="vehicle_ids[]"]').prop('checked', $(this).prop('checked'));
+        updateBatchDeleteButton();
     });
 
+    // 单个复选框变化时更新删除按钮状态
+    $('input[name="vehicle_ids[]"]').change(function() {
+        updateBatchDeleteButton();
+    });
+
+    // 更新批量删除按钮状态
+    function updateBatchDeleteButton() {
+        var checkedCount = $('input[name="vehicle_ids[]"]:checked').length;
+        $('#batchDelete').prop('disabled', checkedCount === 0);
+    }
+
+    // 生成PDF
     $('#generatePdf').click(function(e) {
         e.preventDefault();
         if ($('input[name="vehicle_ids[]"]:checked').length === 0) {
@@ -190,6 +218,39 @@ $(document).ready(function() {
             return;
         }
         $('#vehicleForm').submit();
+    });
+
+    // 批量删除
+    $('#batchDelete').click(function() {
+        if (confirm('确定要删除选中的车辆吗？')) {
+            var checkedVehicles = $('input[name="vehicle_ids[]"]:checked');
+            var vehicleIds = [];
+            checkedVehicles.each(function() {
+                vehicleIds.push($(this).val());
+            });
+
+            $.ajax({
+                url: "{{ url_for('vehicle.batch_delete') }}?page={{ request.args.get('page', 1) }}",
+                type: 'POST',
+                data: {
+                    'vehicle_ids[]': vehicleIds
+                },
+                success: function(response) {
+                    if (response.success) {
+                        if (response.redirect) {
+                            window.location.href = response.redirect;
+                        } else {
+                            location.reload();
+                        }
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('删除失败，请重试');
+                }
+            });
+        }
     });
 
     // 导入功能

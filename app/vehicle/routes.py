@@ -101,6 +101,45 @@ def edit(id):
         return redirect(url_for('vehicle.index'))
     return render_template('vehicle/edit.html', form=form, vehicle=vehicle)
 
+@bp.route('/batch_delete', methods=['POST'])
+@login_required
+def batch_delete():
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': '没有权限执行此操作'}), 403
+
+    vehicle_ids = request.form.getlist('vehicle_ids[]')
+    if not vehicle_ids:
+        return jsonify({'success': False, 'message': '请选择要删除的车辆'}), 400
+
+    try:
+        # 获取当前页码和查询参数
+        current_page = request.args.get('page', 1, type=int)
+        
+        # 删除选中的车辆
+        vehicles = Vehicle.query.filter(Vehicle.id.in_(vehicle_ids)).all()
+        for vehicle in vehicles:
+            db.session.delete(vehicle)
+        db.session.commit()
+        
+        # 检查当前页是否还有数据
+        query = Vehicle.query
+        if not current_user.is_admin:
+            query = query.filter_by(user_id=current_user.id)
+        total_pages = (query.count() + 9) // 10  # 10是每页的记录数
+        
+        # 如果当前页大于总页数，返回前一页
+        if current_page > total_pages and current_page > 1:
+            return jsonify({
+                'success': True, 
+                'message': '删除成功',
+                'redirect': url_for('vehicle.index', page=current_page-1)
+            })
+            
+        return jsonify({'success': True, 'message': '删除成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
 @bp.route('/delete/<int:id>')
 @login_required
 def delete(id):
@@ -108,11 +147,32 @@ def delete(id):
     if not current_user.is_admin and vehicle.user_id != current_user.id:
         flash('您没有权限删除此车辆信息')
         return redirect(url_for('vehicle.index'))
+    
+    try:
+        # 获取当前页码
+        current_page = request.args.get('page', 1, type=int)
         
-    db.session.delete(vehicle)
-    db.session.commit()
-    flash('车辆信息已删除')
-    return redirect(url_for('vehicle.index'))
+        # 删除车辆
+        db.session.delete(vehicle)
+        db.session.commit()
+        
+        # 检查当前页是否还有数据
+        query = Vehicle.query
+        if not current_user.is_admin:
+            query = query.filter_by(user_id=current_user.id)
+        total_pages = (query.count() + 9) // 10  # 10是每页的记录数
+        
+        flash('车辆信息已删除')
+        
+        # 如果当前页大于总页数，返回前一页
+        if current_page > total_pages and current_page > 1:
+            return redirect(url_for('vehicle.index', page=current_page-1))
+            
+        return redirect(url_for('vehicle.index', page=current_page))
+    except Exception as e:
+        db.session.rollback()
+        flash('删除失败：' + str(e))
+        return redirect(url_for('vehicle.index', page=current_page))
 
 @bp.route('/approve/<int:id>')
 @login_required
