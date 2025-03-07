@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>月报管理</h2>
+        <div>
+            <a href="{{ url_for('work_report.index') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> 返回
+            </a>
+            <button class="btn btn-info">
+                <i class="fas fa-plus"></i> 新建月报
+            </button>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 class="mb-0">我的月报</h5>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex justify-content-end">
+                        <div class="input-group" style="max-width: 300px;">
+                            <input type="text" class="form-control" placeholder="搜索月报...">
+                            <button class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>月份</th>
+                            <th>时间范围</th>
+                            <th>提交时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>2025年2月</td>
+                            <td>2025-02-01 至 2025-02-29</td>
+                            <td>2025-02-28 18:30</td>
+                            <td><span class="badge bg-success">已提交</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> 查看
+                                </button>
+                                <button class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>2025年1月</td>
+                            <td>2025-01-01 至 2025-01-31</td>
+                            <td>2025-01-31 17:45</td>
+                            <td><span class="badge bg-success">已提交</span></td>
+                            <td>
+                                <button class="btn btn-sm btn-primary">
+                                    <i class="fas fa-eye"></i> 查看
+                                </button>
+                                <button class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
+                    </li>
+                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    <li class="page-item">
+                        <a class="page-link" href="#">下一页</a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+{% endblock %} 

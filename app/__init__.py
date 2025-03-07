@@ -41,6 +41,9 @@ def create_app(config_class=Config):
 
     from app.dormitory import bp as dormitory_bp
     app.register_blueprint(dormitory_bp, url_prefix='/dormitory')
+    
+    from app.work_report import bp as work_report_bp
+    app.register_blueprint(work_report_bp, url_prefix='/work_report')
 
     # 注册命令
     from app import commands

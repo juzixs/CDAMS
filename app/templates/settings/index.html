@@ -11,6 +11,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="work-report-tab" data-bs-toggle="tab" data-bs-target="#work-report" type="button" role="tab" aria-controls="work-report" aria-selected="false">
+                <i class="fas fa-file-alt"></i> 工作汇报
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="budget-tab" data-bs-toggle="tab" data-bs-target="#budget" type="button" role="tab" aria-controls="budget" aria-selected="false">
                 <i class="fas fa-money-bill"></i> 预算管理
             </button>
@@ -54,6 +59,233 @@
                 <div class="card-body">
                     <h5 class="card-title">全局设置</h5>
                     <p class="card-text">此模块的设置项正在开发中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 工作汇报设置 -->
+        <div class="tab-pane fade" id="work-report" role="tabpanel" aria-labelledby="work-report-tab">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">工作汇报设置</h5>
+                    
+                    <ul class="nav nav-tabs mb-3" id="workReportSubTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="template-tab" data-bs-toggle="tab" data-bs-target="#template" type="button" role="tab" aria-controls="template" aria-selected="true">
+                                <i class="fas fa-file-alt"></i> 模板设置
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="reminder-tab" data-bs-toggle="tab" data-bs-target="#reminder" type="button" role="tab" aria-controls="reminder" aria-selected="false">
+                                <i class="fas fa-bell"></i> 提醒设置
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="approval-tab" data-bs-toggle="tab" data-bs-target="#approval" type="button" role="tab" aria-controls="approval" aria-selected="false">
+                                <i class="fas fa-check-circle"></i> 审批流程
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content" id="workReportSubTabContent">
+                        <!-- 模板设置 -->
+                        <div class="tab-pane fade show active" id="template" role="tabpanel" aria-labelledby="template-tab">
+                            <form method="post" action="#">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="form_type" value="template">
+                                
+                                <div class="mb-4">
+                                    <h6>周报模板</h6>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="weekly_template" rows="5" placeholder="请输入周报模板内容...">本周工作内容：
+1. 
+2. 
+3. 
+
+下周工作计划：
+1. 
+2. 
+3. 
+
+工作难点及解决方案：
+
+其他说明：</textarea>
+                                        <div class="form-text">设置周报的默认模板格式</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6>月报模板</h6>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" name="monthly_template" rows="5" placeholder="请输入月报模板内容...">本月工作总结：
+1. 
+2. 
+3. 
+
+下月工作计划：
+1. 
+2. 
+3. 
+
+重点项目进展：
+
+问题及建议：</textarea>
+                                        <div class="form-text">设置月报的默认模板格式</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 保存模板设置
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- 提醒设置 -->
+                        <div class="tab-pane fade" id="reminder" role="tabpanel" aria-labelledby="reminder-tab">
+                            <form method="post" action="#">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="form_type" value="reminder">
+                                
+                                <div class="mb-4">
+                                    <h6>周报提醒</h6>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder" checked>
+                                            <label class="form-check-label" for="enable_weekly_reminder">启用周报提醒</label>
+                                        </div>
+                                        <div class="form-text">每周五工作结束前提醒填写周报</div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">提醒时间</label>
+                                                <select class="form-select" name="weekly_reminder_time">
+                                                    <option value="15:00">15:00</option>
+                                                    <option value="16:00">16:00</option>
+                                                    <option value="17:00" selected>17:00</option>
+                                                    <option value="18:00">18:00</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">提醒方式</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="weekly_reminder_email" name="weekly_reminder_email" checked>
+                                                    <label class="form-check-label" for="weekly_reminder_email">邮件提醒</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="weekly_reminder_system" name="weekly_reminder_system" checked>
+                                                    <label class="form-check-label" for="weekly_reminder_system">系统提醒</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6>月报提醒</h6>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder" checked>
+                                            <label class="form-check-label" for="enable_monthly_reminder">启用月报提醒</label>
+                                        </div>
+                                        <div class="form-text">每月最后一个工作日提醒填写月报</div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">提醒时间</label>
+                                                <select class="form-select" name="monthly_reminder_time">
+                                                    <option value="15:00">15:00</option>
+                                                    <option value="16:00">16:00</option>
+                                                    <option value="17:00" selected>17:00</option>
+                                                    <option value="18:00">18:00</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label class="form-label">提醒方式</label>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="monthly_reminder_email" name="monthly_reminder_email" checked>
+                                                    <label class="form-check-label" for="monthly_reminder_email">邮件提醒</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="monthly_reminder_system" name="monthly_reminder_system" checked>
+                                                    <label class="form-check-label" for="monthly_reminder_system">系统提醒</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 保存提醒设置
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- 审批流程 -->
+                        <div class="tab-pane fade" id="approval" role="tabpanel" aria-labelledby="approval-tab">
+                            <form method="post" action="#">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <input type="hidden" name="form_type" value="approval">
+                                
+                                <div class="mb-4">
+                                    <h6>周报审批流程</h6>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable_weekly_approval" name="enable_weekly_approval">
+                                            <label class="form-check-label" for="enable_weekly_approval">启用周报审批</label>
+                                        </div>
+                                        <div class="form-text">启用后，周报需要经过审批才能最终提交</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">审批人</label>
+                                        <select class="form-select" name="weekly_approver">
+                                            <option value="direct_manager">直接上级</option>
+                                            <option value="department_head">部门主管</option>
+                                            <option value="custom">自定义</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <h6>月报审批流程</h6>
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="enable_monthly_approval" name="enable_monthly_approval" checked>
+                                            <label class="form-check-label" for="enable_monthly_approval">启用月报审批</label>
+                                        </div>
+                                        <div class="form-text">启用后，月报需要经过审批才能最终提交</div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label">审批人</label>
+                                        <select class="form-select" name="monthly_approver">
+                                            <option value="direct_manager">直接上级</option>
+                                            <option value="department_head" selected>部门主管</option>
+                                            <option value="custom">自定义</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> 保存审批设置
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

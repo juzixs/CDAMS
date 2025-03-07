@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>工作汇报</h2>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">周报</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">管理每周工作汇报，总结一周工作内容和计划下周工作。</p>
+                    <a href="{{ url_for('work_report.weekly') }}" class="btn btn-success">
+                        <i class="fas fa-calendar-week"></i> 进入周报
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">月报</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">管理每月工作汇报，总结月度工作成果和下月工作计划。</p>
+                    <a href="{{ url_for('work_report.monthly') }}" class="btn btn-info">
+                        <i class="fas fa-calendar-alt"></i> 进入月报
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
