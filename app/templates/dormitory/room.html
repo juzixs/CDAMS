@@ -23,6 +23,7 @@
                 <div class="card-body">
                     <p><strong>所属宿舍：</strong>{{ room.dormitory.name }}</p>
                     <p><strong>房间类型：</strong>{{ room.room_type }}</p>
+                    <p><strong>楼层：</strong>{{ room.floor }}层</p>
                     <p><strong>容纳人数：</strong>{{ room.capacity }}人</p>
                     <p><strong>当前入住：</strong>{{ room.current_residents_count }}人</p>
                     <p><strong>房间配置：</strong>{{ room.facilities or '无' }}</p>
@@ -109,6 +110,7 @@
                                     <th>岗位</th>
                                     <th>手机</th>
                                     <th>入住时间</th>
+                                    <th>备注</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
@@ -125,6 +127,7 @@
                                     <td>{{ resident.position or '-' }}</td>
                                     <td>{{ resident.phone or '-' }}</td>
                                     <td>{{ resident.checkin_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ resident.remarks or '-' }}</td>
                                     <td>
                                         <a href="{{ url_for('dormitory.edit_resident', resident_id=resident.id) }}" class="btn btn-sm btn-primary me-1">
                                             <i class="fas fa-edit"></i> 编辑
