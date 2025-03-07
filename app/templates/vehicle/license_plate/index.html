@@ -65,6 +65,7 @@
 
 <div class="table-responsive">
     <form id="vehicleForm" method="post" action="{{ url_for('license_plate.generate_pdf') }}">
+        {{ form.csrf_token }}
         <table class="table table-striped">
             <thead>
                 <tr>
@@ -102,16 +103,23 @@
                     <td>{{ vehicle.issued_at.strftime('%Y-%m-%d %H:%M') if vehicle.issued_at else '-' }}</td>
                     <td>
                         <div class="btn-group">
-                            <a href="{{ url_for('license_plate.edit', id=vehicle.id) }}" class="btn btn-sm btn-info">
+                            <a href="{{ url_for('license_plate.edit', id=vehicle.id) }}" class="btn btn-sm btn-primary">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="{{ url_for('license_plate.delete', id=vehicle.id) }}" class="btn btn-sm btn-danger" 
-                               onclick="return confirm('确定要删除这条记录吗？')">
+                            <button type="button" class="btn btn-sm btn-danger delete-vehicle" data-id="{{ vehicle.id }}">
                                 <i class="fas fa-trash"></i>
+                            </button>
+                            {% if vehicle.status == 'pending' and current_user.is_admin %}
+                            <a href="{{ url_for('license_plate.approve', id=vehicle.id) }}" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i>
                             </a>
-                            {% if current_user.is_admin %}
-                            <a href="{{ url_for('license_plate.issue', id=vehicle.id) }}" class="btn btn-sm btn-success">
-                                <i class="fas fa-check"></i> 发放
+                            <a href="{{ url_for('license_plate.reject', id=vehicle.id) }}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-times"></i>
+                            </a>
+                            {% endif %}
+                            {% if vehicle.status == 'approved' and not vehicle.issued_at and current_user.is_admin %}
+                            <a href="{{ url_for('license_plate.issue', id=vehicle.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-print"></i> 发放
                             </a>
                             {% endif %}
                         </div>
@@ -212,32 +220,62 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
-    // 处理复选框状态变化
-    function updateDeleteButton() {
-        let checkedCount = $('input[name="vehicle_ids[]"]:checked').length;
+    // 全选/取消全选
+    $('#selectAll').change(function() {
+        $('input[name="vehicle_ids[]"]').prop('checked', $(this).prop('checked'));
+        updateBatchDeleteButton();
+    });
+
+    // 单个复选框变化时更新删除按钮状态
+    $('input[name="vehicle_ids[]"]').change(function() {
+        updateBatchDeleteButton();
+    });
+
+    // 更新批量删除按钮状态
+    function updateBatchDeleteButton() {
+        var checkedCount = $('input[name="vehicle_ids[]"]:checked').length;
         $('#batchDelete').prop('disabled', checkedCount === 0);
     }
 
-    // 绑定复选框变化事件
-    $('input[name="vehicle_ids[]"], #selectAll').change(function() {
-        updateDeleteButton();
-    });
-
-    // 页面加载时初始化按钮状态
-    updateDeleteButton();
-
-    // 全选功能
-    $('#selectAll').change(function() {
-        $('input[name="vehicle_ids[]"]').prop('checked', $(this).prop('checked'));
-        updateDeleteButton();
-    });
-
+    // 生成PDF
     $('#generatePdf').click(function(e) {
-        if ($('input[name="vehicle_ids[]"]:checked').length === 0) {
-            alert('请至少选择一个车辆');
+        e.preventDefault();
+        var checkedVehicles = $('input[name="vehicle_ids[]"]:checked');
+        if (checkedVehicles.length === 0) {
+            alert('请至少选择一个车牌');
             return;
         }
         $('#vehicleForm').submit();
+    });
+
+    // 批量删除
+    $('#batchDelete').click(function() {
+        if (confirm('确定要删除选中的车辆吗？')) {
+            var checkedVehicles = $('input[name="vehicle_ids[]"]:checked');
+            var vehicleIds = [];
+            checkedVehicles.each(function() {
+                vehicleIds.push($(this).val());
+            });
+
+            $.ajax({
+                url: "{{ url_for('license_plate.batch_delete') }}",
+                type: 'POST',
+                data: {
+                    vehicle_ids: vehicleIds,
+                    csrf_token: "{{ form.csrf_token._value() }}"
+                },
+                success: function(response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        alert(response.message);
+                    }
+                },
+                error: function() {
+                    alert('删除失败，请重试');
+                }
+            });
+        }
     });
 
     // 导入功能
@@ -286,39 +324,6 @@ $(document).ready(function() {
                 ).show();
             }
         });
-    });
-
-    // 批量删除功能
-    $('#batchDelete').click(function() {
-        let selectedVehicles = $('input[name="vehicle_ids[]"]:checked').map(function() {
-            return $(this).val();
-        }).get();
-
-        if (selectedVehicles.length === 0) {
-            alert('请至少选择一个车辆');
-            return;
-        }
-
-        if (confirm('确定要删除选中的' + selectedVehicles.length + '个车辆吗？此操作不可撤销。')) {
-            $.ajax({
-                url: "{{ url_for('license_plate.batch_delete') }}",
-                type: 'POST',
-                data: {
-                    vehicle_ids: selectedVehicles
-                },
-                success: function(response) {
-                    if (response.success) {
-                        alert('删除成功');
-                        location.reload();
-                    } else {
-                        alert('删除失败: ' + response.message);
-                    }
-                },
-                error: function() {
-                    alert('删除操作失败，请稍后重试');
-                }
-            });
-        }
     });
 });
 </script>

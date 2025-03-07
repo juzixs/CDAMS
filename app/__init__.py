@@ -20,18 +20,15 @@ def create_app(config_class=Config):
     # 初始化CSRF保护
     csrf.init_app(app)
 
-    # 注册命令
-    from app.commands import init_db, create_admin, create_test_data
-    app.cli.add_command(init_db)
-    app.cli.add_command(create_admin)
-    app.cli.add_command(create_test_data)
-
     # 注册蓝图
     from app.auth import bp as auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
     from app.settings import bp as settings_bp
     app.register_blueprint(settings_bp, url_prefix='/settings')
+
+    from app.vehicle import bp as vehicle_bp
+    app.register_blueprint(vehicle_bp, url_prefix='/vehicle')
 
     from app.vehicle.license_plate import bp as license_plate_bp
     app.register_blueprint(license_plate_bp, url_prefix='/vehicle/license-plate')
@@ -41,6 +38,13 @@ def create_app(config_class=Config):
 
     from app.user import bp as user_bp
     app.register_blueprint(user_bp, url_prefix='/user')
+
+    from app.dormitory import bp as dormitory_bp
+    app.register_blueprint(dormitory_bp, url_prefix='/dormitory')
+
+    # 注册命令
+    from app import commands
+    commands.init_app(app)
 
     @app.route('/')
     def index():

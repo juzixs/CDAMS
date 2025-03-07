@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>房间: {{ room.room_number }} <span class="badge bg-info">{{ room.capacity }}人间</span></h2>
+        <div>
+            <a href="{{ url_for('dormitory.view_dormitory', dormitory_id=room.dormitory_id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回宿舍详情
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>房间信息</h4>
+                    <a href="{{ url_for('dormitory.edit_room', room_id=room.id) }}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-edit"></i> 编辑房间
+                    </a>
+                </div>
+                <div class="card-body">
+                    <p><strong>所属宿舍：</strong>{{ room.dormitory.name }}</p>
+                    <p><strong>房间类型：</strong>{{ room.room_type }}</p>
+                    <p><strong>容纳人数：</strong>{{ room.capacity }}人</p>
+                    <p><strong>当前入住：</strong>{{ room.current_residents_count }}人</p>
+                    <p><strong>房间配置：</strong>{{ room.facilities or '无' }}</p>
+                    {% if room.can_have_monitor %}
+                    <p>
+                        <strong>宿舍长：</strong>
+                        {% if room.monitor %}
+                            {{ room.monitor.name }}
+                            ({{ room.monitor.employee_id }})
+                        {% else %}
+                            <span class="text-muted">未设置</span>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-primary ms-2" data-bs-toggle="modal" data-bs-target="#setMonitorModal">
+                            <i class="fas fa-user-edit"></i> {% if room.monitor %}更换{% else %}设置{% endif %}宿舍长
+                        </button>
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4>添加住户</h4>
+                </div>
+                <div class="card-body">
+                    {% if room.is_full %}
+                    <div class="alert alert-warning">
+                        房间已满，无法添加新住户
+                    </div>
+                    {% else %}
+                    <form method="post" action="{{ url_for('dormitory.add_resident', room_id=room.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-3">
+                            {{ resident_form.name.label(class="form-label") }}
+                            {{ resident_form.name(class="form-control", required=true) }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ resident_form.gender.label(class="form-label") }}
+                            {{ resident_form.gender(class="form-select", required=true) }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ resident_form.department.label(class="form-label") }}
+                            {{ resident_form.department(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ resident_form.position.label(class="form-label") }}
+                            {{ resident_form.position(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ resident_form.phone.label(class="form-label") }}
+                            {{ resident_form.phone(class="form-control") }}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ resident_form.remarks.label(class="form-label") }}
+                            {{ resident_form.remarks(class="form-control", rows=3) }}
+                        </div>
+                        
+                        {{ resident_form.submit(class="btn btn-primary w-100") }}
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h4>当前住户</h4>
+                </div>
+                <div class="card-body">
+                    {% if residents %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>性别</th>
+                                    <th>部门</th>
+                                    <th>岗位</th>
+                                    <th>手机</th>
+                                    <th>入住时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for resident in residents %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if resident.gender == '男' %}bg-primary{% else %}bg-danger{% endif %}">
+                                            {{ resident.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ resident.gender }}</td>
+                                    <td>{{ resident.department or '-' }}</td>
+                                    <td>{{ resident.position or '-' }}</td>
+                                    <td>{{ resident.phone or '-' }}</td>
+                                    <td>{{ resident.checkin_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('dormitory.edit_resident', resident_id=resident.id) }}" class="btn btn-sm btn-primary me-1">
+                                            <i class="fas fa-edit"></i> 编辑
+                                        </a>
+                                        <form action="{{ url_for('dormitory.checkout_resident', resident_id=resident.id) }}" method="post" class="d-inline" onsubmit="return confirm('确定要办理{{ resident.name }}的退住手续吗？')">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-warning">
+                                                <i class="fas fa-sign-out-alt"></i> 退住
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        暂无住户入住
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h4>历史住户记录</h4>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>姓名</th>
+                                    <th>性别</th>
+                                    <th>部门</th>
+                                    <th>入住时间</th>
+                                    <th>退住时间</th>
+                                    <th>备注</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for resident in history %}
+                                <tr>
+                                    <td>
+                                        <span class="badge {% if resident.gender == '男' %}bg-primary{% else %}bg-danger{% endif %}">
+                                            {{ resident.name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ resident.gender }}</td>
+                                    <td>{{ resident.department or '-' }}</td>
+                                    <td>{{ resident.checkin_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ resident.checkout_date.strftime('%Y-%m-%d') }}</td>
+                                    <td>{{ resident.remarks or '-' }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        暂无历史住户记录
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 设置宿舍长模态框 -->
+{% if room.can_have_monitor %}
+<div class="modal fade" id="setMonitorModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">设置宿舍长</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="setMonitorForm" method="POST" action="{{ url_for('dormitory.set_monitor', room_id=room.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="mb-3">
+                        <label class="form-label">选择宿舍长</label>
+                        <select name="employee_id" class="form-select" required>
+                            <option value="">请选择...</option>
+                            {% for resident in residents %}
+                            <option value="{{ resident.id }}" {% if room.monitor_id == resident.id %}selected{% endif %}>
+                                {{ resident.name }} ({{ resident.department }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">只能从当前房间的住户中选择宿舍长</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" form="setMonitorForm" class="btn btn-primary">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %} 

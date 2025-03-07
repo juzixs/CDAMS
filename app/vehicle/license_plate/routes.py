@@ -10,6 +10,10 @@ from app.models import Vehicle
 from app.vehicle.license_plate.forms import VehicleForm
 from app.vehicle.license_plate.utils import export_vehicles_to_excel, import_vehicles_from_excel, create_import_template
 from app.utils.pdf_generator import generate_vehicle_pass_pdf
+from flask_wtf import FlaskForm
+
+class EmptyForm(FlaskForm):
+    pass
 
 @bp.route('/')
 @login_required
@@ -18,6 +22,8 @@ def index():
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     status = request.args.get('status', '')
+    vehicle_type = request.args.get('vehicle_type', '')
+    department = request.args.get('department', '')
     
     query = Vehicle.query
     
@@ -32,13 +38,28 @@ def index():
     
     if status:
         query = query.filter_by(status=status)
+        
+    if vehicle_type:
+        query = query.filter_by(vehicle_type=vehicle_type)
+        
+    if department:
+        query = query.filter_by(department=department)
     
     vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
     
     # 在会话中记录当前页面为车辆通行证管理页面
     session['vehicle_list_source'] = 'index'
     
-    return render_template('vehicle/license_plate/index.html', vehicles=vehicles, search=search, status=status)
+    # 创建空表单用于CSRF保护
+    form = EmptyForm()
+    
+    return render_template('vehicle/license_plate/index.html', 
+                         vehicles=vehicles, 
+                         search=search, 
+                         status=status,
+                         vehicle_type=vehicle_type,
+                         department=department,
+                         form=form)
 
 @bp.route('/pending')
 @login_required

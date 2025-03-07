@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>{{ dormitory.name }} <span class="badge {% if dormitory.type == '自有' %}bg-primary{% else %}bg-warning{% endif %}">{{ dormitory.type }}</span></h2>
+        <a href="{{ url_for('dormitory.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 返回宿舍列表
+        </a>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>宿舍信息</h4>
+            <a href="{{ url_for('dormitory.edit_dormitory', dormitory_id=dormitory.id) }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i> 编辑宿舍信息
+            </a>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>地址：</strong>{{ dormitory.address or '未设置' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>类型：</strong>{{ dormitory.type }}</p>
+                </div>
+            </div>
+            {% if dormitory.type == '租赁' %}
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>起租时间：</strong>{{ dormitory.lease_start_date.strftime('%Y-%m-%d') if dormitory.lease_start_date else '未设置' }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>到期时间：</strong>{{ dormitory.lease_end_date.strftime('%Y-%m-%d') if dormitory.lease_end_date else '未设置' }}</p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h4>房间列表</h4>
+            <button type="button" class="btn btn-primary" id="addRoomBtn" data-bs-toggle="modal" data-bs-target="#addRoomModal">
+                <i class="fas fa-plus"></i> 添加房间
+            </button>
+        </div>
+        <div class="card-body">
+            <!-- 搜索筛选表单 -->
+            <form method="get" action="{{ url_for('dormitory.view_dormitory', dormitory_id=dormitory.id) }}" class="mb-4">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="room_type" class="form-label">房间类型</label>
+                        <select class="form-select" id="room_type" name="room_type">
+                            <option value="">全部</option>
+                            {% for type in room_types %}
+                            <option value="{{ type }}" {% if room_type == type %}selected{% endif %}>{{ type }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="resident_name" class="form-label">住户姓名</label>
+                        <input type="text" class="form-control" id="resident_name" name="resident_name" value="{{ resident_name }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="form-check mb-2 me-3">
+                            <input class="form-check-input" type="checkbox" id="available_only" name="available_only" {% if available_only %}checked{% endif %}>
+                            <label class="form-check-label" for="available_only">
+                                只显示未住满
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search"></i> 搜索
+                        </button>
+                        <a href="{{ url_for('dormitory.view_dormitory', dormitory_id=dormitory.id) }}" class="btn btn-secondary ms-2">
+                            <i class="fas fa-redo"></i> 重置
+                        </a>
+                    </div>
+                </div>
+            </form>
+
+            {% if rooms %}
+            <div class="row">
+                {% for room in rooms %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="card-title mb-0">{{ room.room_number }}</h5>
+                            <span class="badge bg-info">{{ room.capacity }}人间</span>
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <small class="text-muted">容量：{{ room.capacity }}人</small>
+                                <span class="badge {% if room.is_full %}bg-danger{% else %}bg-success{% endif %}">
+                                    {{ room.current_residents_count }}/{{ room.capacity }}
+                                </span>
+                            </div>
+                            {% if room.monitor %}
+                            <div class="monitor-info mb-2">
+                                <small class="d-flex align-items-center text-muted">
+                                    <i class="fas fa-user-shield me-1"></i>
+                                    宿舍长：<span class="badge bg-info ms-1">{{ room.monitor.name }}</span>
+                                </small>
+                            </div>
+                            {% endif %}
+                            {% if room.current_residents_count > 0 %}
+                            <div class="resident-list">
+                                <div class="d-flex flex-wrap align-items-center gap-1">
+                                    {% for resident in room.residents.filter_by(checkout_date=None).all() %}
+                                    <div class="resident-item d-inline-flex align-items-center">
+                                        <span class="badge {% if resident.gender == '男' %}bg-primary{% else %}bg-danger{% endif %} d-inline-flex align-items-center">
+                                            {{ resident.name }}
+                                            {% if room.monitor %}
+                                                {% if resident.id == room.monitor.resident_id %}
+                                                    <i class="fas fa-star ms-1" title="宿舍长"></i>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if resident.notes %}
+                                            <i class="fas fa-info-circle ms-1" data-bs-toggle="tooltip" title="{{ resident.notes }}"></i>
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% else %}
+                            <div class="text-muted text-center">
+                                <small>暂无住户</small>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer d-flex justify-content-between">
+                            <a href="{{ url_for('dormitory.view_room', room_id=room.id) }}" class="btn btn-info">
+                                <i class="fas fa-eye"></i> 查看详情
+                            </a>
+                            <div>
+                                <a href="{{ url_for('dormitory.edit_room', room_id=room.id) }}" class="btn btn-primary">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </a>
+                                <form action="{{ url_for('dormitory.delete_room', room_id=room.id) }}" method="post" class="d-inline" onsubmit="return confirm('确定要删除该房间吗？此操作不可撤销。')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger">
+                                        <i class="fas fa-trash"></i> 删除
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                暂无房间记录，请点击"添加房间"按钮创建房间
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- 添加房间模态框 -->
+<div class="modal fade" id="addRoomModal" tabindex="-1" aria-labelledby="addRoomModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRoomModalLabel">添加房间</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{{ url_for('dormitory.add_room', dormitory_id=dormitory.id) }}">
+                <div class="modal-body">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        {{ room_form.room_number.label(class="form-label") }}
+                        {{ room_form.room_number(class="form-control", required=true) }}
+                        <div class="form-text">房间号必填</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ room_form.floor.label(class="form-label") }}
+                        {{ room_form.floor(class="form-control", required=true, min=1) }}
+                        <div class="form-text">楼层号必填</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ room_form.capacity.label(class="form-label") }}
+                        {{ room_form.capacity(class="form-control", required=true, min=1) }}
+                        <div class="form-text">容纳人数必填</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ room_form.room_type.label(class="form-label") }}
+                        {{ room_form.room_type(class="form-select") }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ room_form.facilities.label(class="form-label") }}
+                        {{ room_form.facilities(class="form-control") }}
+                        <div class="form-text">{{ room_form.facilities.description }}</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    {{ room_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        console.log('Dormitory view page loaded - jQuery ready');
+        
+        // 手动处理模态框
+        const roomModal = document.getElementById('addRoomModal');
+        
+        // 监听模态框关闭事件，确保背景遮罩被移除
+        roomModal.addEventListener('hidden.bs.modal', function() {
+            // 移除所有遮罩层
+            const backdrops = document.querySelectorAll('.modal-backdrop');
+            backdrops.forEach(backdrop => {
+                backdrop.remove();
+            });
+            // 恢复body样式
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        });
+        
+        // 按钮点击事件处理
+        $('#addRoomBtn').on('click', function() {
+            // 确保之前的遮罩已清除
+            $('.modal-backdrop').remove();
+            document.body.classList.remove('modal-open');
+            
+            // 创建新的模态框实例
+            var myModal = new bootstrap.Modal(roomModal, {
+                backdrop: true, 
+                keyboard: true
+            });
+            myModal.show();
+        });
+        
+        // 初始化工具提示
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %} 
