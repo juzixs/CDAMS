@@ -1,5 +1,5 @@
 import os
-from flask import Flask, redirect, url_for
+from flask import Flask, redirect, url_for, render_template
 from flask_login import current_user
 from config import Config
 from app.extensions import db, migrate, login_manager, csrf
@@ -16,6 +16,13 @@ def create_app(config_class=Config):
     
     # 添加hasattr函数到Jinja2环境
     app.jinja_env.globals['hasattr'] = hasattr
+    
+    # 添加nl2br过滤器
+    @app.template_filter('nl2br')
+    def nl2br_filter(s):
+        if s:
+            return s.replace('\n', '<br>')
+        return s
     
     # 初始化CSRF保护
     csrf.init_app(app)
@@ -42,6 +49,9 @@ def create_app(config_class=Config):
     from app.dormitory import bp as dormitory_bp
     app.register_blueprint(dormitory_bp, url_prefix='/dormitory')
     
+    from app.ticket import bp as ticket_bp
+    app.register_blueprint(ticket_bp, url_prefix='/ticket')
+
     from app.work_report import bp as work_report_bp
     app.register_blueprint(work_report_bp, url_prefix='/work_report')
 
@@ -51,9 +61,7 @@ def create_app(config_class=Config):
 
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
-            return redirect(url_for('license_plate.index'))
-        return redirect(url_for('auth.login'))
+        return render_template('index.html', title='首页')
 
     return app
 

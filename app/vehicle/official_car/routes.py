@@ -6,4 +6,4 @@ from app.vehicle.official_car import bp
 @bp.route('/')
 @login_required
 def index():
-    return render_template('vehicle/official_car/index.html', title='公务车辆管理') 
+    return render_template('vehicle/official_car/index.html', title='公务车辆') 

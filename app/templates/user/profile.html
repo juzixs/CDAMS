@@ -95,6 +95,34 @@
                             </div>
                             {% endif %}
                         </div>
+                        
+                        {% if user != current_user %}
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control", placeholder="留空表示不修改密码") }}
+                            {% if form.password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.password.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text">如需修改密码，请在此输入新密码，否则留空</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.confirm_password.label(class="form-label") }}
+                            {{ form.confirm_password(class="form-control", placeholder="再次输入新密码") }}
+                            {% if form.confirm_password.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.confirm_password.errors %}
+                                <span>{{ error }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                        
                         <div class="text-end">
                             {% if user != current_user %}
                                 <a href="{{ url_for('user.users') }}" class="btn btn-secondary">返回</a>

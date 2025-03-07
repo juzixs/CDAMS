@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>工单系统</h1>
+        <div class="btn-group">
+            <a href="{{ url_for('ticket.create') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> 创建工单
+            </a>
+            {% if current_user.is_admin %}
+            <a href="{{ url_for('ticket.categories') }}" class="btn btn-secondary">
+                <i class="fas fa-tags"></i> 管理分类
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <select name="status" class="form-select" onchange="this.form.submit()">
+                        <option value="all" {% if status == 'all' %}selected{% endif %}>所有状态</option>
+                        <option value="pending" {% if status == 'pending' %}selected{% endif %}>待处理</option>
+                        <option value="processing" {% if status == 'processing' %}selected{% endif %}>处理中</option>
+                        <option value="resolved" {% if status == 'resolved' %}selected{% endif %}>已解决</option>
+                        <option value="closed" {% if status == 'closed' %}selected{% endif %}>已关闭</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>标题</th>
+                    <th>分类</th>
+                    <th>优先级</th>
+                    <th>状态</th>
+                    <th>创建时间</th>
+                    <th>更新时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets.items %}
+                <tr>
+                    <td>{{ ticket.id }}</td>
+                    <td>
+                        <a href="{{ url_for('ticket.view', id=ticket.id) }}">{{ ticket.title }}</a>
+                    </td>
+                    <td>{{ ticket.category.name }}</td>
+                    <td>
+                        <span class="{{ ticket.priority_class }}">{{ ticket.priority_display }}</span>
+                    </td>
+                    <td>
+                        <span class="badge {{ ticket.status_class }}">{{ ticket.status_display }}</span>
+                    </td>
+                    <td>{{ ticket.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ ticket.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('ticket.view', id=ticket.id) }}" class="btn btn-sm btn-info">
+                                <i class="fas fa-eye"></i> 查看
+                            </a>
+                            {% if ticket.status != 'closed' %}
+                            <a href="{{ url_for('ticket.close', id=ticket.id) }}" class="btn btn-sm btn-secondary">
+                                <i class="fas fa-times-circle"></i> 关闭
+                            </a>
+                            {% else %}
+                            <a href="{{ url_for('ticket.reopen', id=ticket.id) }}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-redo"></i> 重开
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if tickets.items %}
+    <nav>
+        <ul class="pagination">
+            {% for page in tickets.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == tickets.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('ticket.index', page=page, status=status) }}">{{ page }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+    {% else %}
+    <div class="alert alert-info">暂无工单记录</div>
+    {% endif %}
+</div>
+{% endblock %} 

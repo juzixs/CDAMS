@@ -139,7 +139,7 @@
     <!-- 顶部导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ url_for('vehicle.index') }}">
+            <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-building"></i>行政管理系统
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -150,7 +150,7 @@
                 <!-- 左侧导航项 -->
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'vehicle.index' %}active{% endif %}" href="{{ url_for('vehicle.index') }}">
+                        <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}">
                             <i class="fas fa-home"></i>首页
                         </a>
                     </li>
@@ -198,31 +198,55 @@
     <nav class="col-md-3 col-lg-2 d-md-block sidebar">
         <div class="sidebar-sticky">
             <ul class="nav flex-column">
+                <!-- 普通级模块：所有用户可见 -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('ticket') %}active{% endif %}" href="{{ url_for('ticket.index') }}">
+                        <i class="fas fa-ticket-alt"></i> 工单系统
+                    </a>
+                </li>
+                
+                <!-- 授权级模块：需要授权才可见 -->
+                {% if current_user.has_module_permission('report') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('work_report') %}active{% endif %}" href="{{ url_for('work_report.index') }}">
                         <i class="fas fa-file-alt"></i> 工作汇报
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('budget') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('budget') %}active{% endif %}" href="#">
                         <i class="fas fa-coins"></i> 预算管理
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('asset') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('asset') %}active{% endif %}" href="#">
                         <i class="fas fa-box"></i> 固定资产
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('office_supply') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('office') %}active{% endif %}" href="#">
                         <i class="fas fa-pencil-alt"></i> 办公用品
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('beverage') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('beverage') %}active{% endif %}" href="#">
                         <i class="fas fa-wine-bottle"></i> 酒水管理
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('vehicle') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('vehicle') %}active{% endif %}" 
                        data-bs-toggle="collapse" 
@@ -244,28 +268,40 @@
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'license_plate.index' %}active{% endif %}" 
                                    href="{{ url_for('license_plate.index') }}">
-                                    <i class="fas fa-id-card"></i> 车辆通行证管理
+                                    <i class="fas fa-id-card"></i> 车辆通行证
                                 </a>
                             </li>
                         </ul>
                     </div>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('dormitory') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('dormitory') %}active{% endif %}" href="{{ url_for('dormitory.index') }}">
                         <i class="fas fa-bed"></i> 宿舍管理
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('cafeteria') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('canteen') %}active{% endif %}" href="#">
                         <i class="fas fa-utensils"></i> 食堂管理
                     </a>
                 </li>
-                {% if current_user.is_admin %}
+                {% endif %}
+                
+                <!-- 管理级模块：仅管理员可见 -->
+                {% if current_user.has_module_permission('user') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('user') and request.endpoint != 'user.profile' and request.endpoint != 'user.password' %}active{% endif %}" href="{{ url_for('user.users') }}">
                         <i class="fas fa-users"></i> 用户管理
                     </a>
                 </li>
+                {% endif %}
+                
+                {% if current_user.has_module_permission('settings') %}
                 <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}">
                         <i class="fas fa-cog"></i> 系统设置

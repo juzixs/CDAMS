@@ -1,14 +1,16 @@
 import os
-from flask import render_template, flash, redirect, url_for, current_app
+from flask import render_template, flash, redirect, url_for, current_app, request
 from flask_login import login_required, current_user
 from werkzeug.utils import secure_filename
 from app import db
 from app.settings import bp
 from app.forms import PDFSettingsForm
-from app.models import PDFSettings
+from app.models import PDFSettings, Module
+from app.decorators import module_permission_required
 
 @bp.route('/', methods=['GET', 'POST'])
 @login_required
+@module_permission_required('settings')
 def index():
     """系统设置"""
     if not current_user.is_admin:
@@ -21,6 +23,9 @@ def index():
         settings = PDFSettings()
         db.session.add(settings)
         db.session.commit()
+    
+    # 获取所有模块
+    modules = Module.query.all()
     
     form = PDFSettingsForm()
     if form.validate_on_submit():
@@ -61,10 +66,32 @@ def index():
         form.outline_color.data = settings.outline_color
         form.outline_width.data = settings.outline_width
     
-    return render_template('settings/index.html', form=form, settings=settings)
+    return render_template('settings/index.html', form=form, settings=settings, modules=modules)
+
+@bp.route('/update_global', methods=['POST'])
+@login_required
+@module_permission_required('settings')
+def update_global():
+    """更新全局设置"""
+    if not current_user.is_admin:
+        flash('只有管理员可以访问系统设置')
+        return redirect(url_for('index'))
+    
+    # 更新模块权限级别
+    for key, value in request.form.items():
+        if key.startswith('module_permission_'):
+            module_id = int(key.split('_')[-1])
+            module = Module.query.get(module_id)
+            if module:
+                module.permission_level = value
+    
+    db.session.commit()
+    flash('全局设置已更新')
+    return redirect(url_for('settings.index'))
 
 @bp.route('/reset_defaults', methods=['POST'])
 @login_required
+@module_permission_required('settings')
 def reset_defaults():
     """恢复默认设置"""
     if not current_user.is_admin:

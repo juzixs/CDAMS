@@ -29,6 +29,11 @@ class ProfileForm(FlaskForm):
     name = StringField('姓名', validators=[DataRequired(), Length(min=2, max=20)])
     department = StringField('部门', validators=[DataRequired(), Length(max=50)])
     phone = StringField('手机', validators=[DataRequired(), Length(min=11, max=11)])
+    password = PasswordField('密码', validators=[Optional(), Length(min=6, message='密码长度不能小于6个字符')])
+    confirm_password = PasswordField('确认密码', validators=[
+        Optional(),
+        EqualTo('password', message='两次输入的密码不一致')
+    ])
     submit = SubmitField('保存')
 
 class PasswordForm(FlaskForm):

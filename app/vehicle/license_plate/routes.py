@@ -18,7 +18,7 @@ class EmptyForm(FlaskForm):
 @bp.route('/')
 @login_required
 def index():
-    """车辆通行证管理首页"""
+    """车辆通行证首页"""
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
     status = request.args.get('status', '')
@@ -47,7 +47,7 @@ def index():
     
     vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
     
-    # 在会话中记录当前页面为车辆通行证管理页面
+    # 在会话中记录当前页面为车辆通行证页面
     session['vehicle_list_source'] = 'index'
     
     # 创建空表单用于CSRF保护
@@ -339,14 +339,14 @@ def batch_action():
         for vehicle in vehicles:
             vehicle.status = 'approved'
         db.session.commit()
-        flash('所有待审核车牌已通过')
+        flash('已通过所有待审核车辆')
     elif action == 'reject_all':
         # 全部拒绝
         vehicles = Vehicle.query.filter_by(status='pending').all()
         for vehicle in vehicles:
             vehicle.status = 'rejected'
         db.session.commit()
-        flash('所有待审核车牌已拒绝')
+        flash('已拒绝所有待审核车辆')
     elif action in ['batch_approve', 'batch_reject']:
         # 批量操作选中项
         vehicle_ids = request.form.getlist('vehicle_ids[]')
@@ -359,7 +359,8 @@ def batch_action():
         for vehicle in vehicles:
             vehicle.status = status
         db.session.commit()
-        flash(f'已{status}选中的车牌')
+        message = '已通过选择的车辆' if status == 'approved' else '已拒绝选择的车辆'
+        flash(message)
     
     return redirect(url_for('license_plate.pending'))
 

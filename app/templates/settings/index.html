@@ -11,6 +11,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ticket-tab" data-bs-toggle="tab" data-bs-target="#ticket" type="button" role="tab" aria-controls="ticket" aria-selected="false">
+                <i class="fas fa-ticket-alt"></i> 工单系统
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="work-report-tab" data-bs-toggle="tab" data-bs-target="#work-report" type="button" role="tab" aria-controls="work-report" aria-selected="false">
                 <i class="fas fa-file-alt"></i> 工作汇报
             </button>
@@ -58,9 +63,112 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">全局设置</h5>
-                    <p class="card-text">此模块的设置项正在开发中...</p>
+                    
+                    <form method="post" action="{{ url_for('settings.update_global') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="mb-4">
+                            <h6>模块权限级别设置</h6>
+                            <div class="alert alert-info">
+                                <small>
+                                    <i class="fas fa-info-circle"></i> 权限说明：
+                                    <ul class="mb-0">
+                                        <li>普通级：所有用户可访问</li>
+                                        <li>授权级：需要特别授权才能访问</li>
+                                        <li>管理级：仅管理员可访问</li>
+                                    </ul>
+                                </small>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>模块名称</th>
+                                            <th>权限级别</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for module in modules %}
+                                        <tr>
+                                            <td>{{ module.name }}</td>
+                                            <td>
+                                                <select class="form-select" name="module_permission_{{ module.id }}">
+                                                    <option value="normal" {% if module.permission_level == 'normal' %}selected{% endif %}>普通级</option>
+                                                    <option value="authorized" {% if module.permission_level == 'authorized' %}selected{% endif %}>授权级</option>
+                                                    <option value="admin" {% if module.permission_level == 'admin' %}selected{% endif %}>管理级</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">保存设置</button>
+                        </div>
+                    </form>
                 </div>
             </div>
+        </div>
+        
+        <!-- 工单系统设置 -->
+        <div class="tab-pane fade" id="ticket" role="tabpanel" aria-labelledby="ticket-tab">
+            <form method="post" action="#">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="form_type" value="ticket">
+                
+                <div class="mb-4">
+                    <h6>工单系统基本设置</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_system" name="enable_ticket_system">
+                            <label class="form-check-label" for="enable_ticket_system">启用工单系统</label>
+                        </div>
+                        <div class="form-text">启用后，用户可以创建和管理工单</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">默认工单处理人</label>
+                        <select class="form-select" name="default_ticket_handler">
+                            <option value="admin">系统管理员</option>
+                            <option value="department_head">部门主管</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">工单自动关闭时间（天）</label>
+                        <input type="number" class="form-control" name="ticket_auto_close_days" min="0" max="365" value="30">
+                        <div class="form-text">设置为0表示不自动关闭</div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>工单通知设置</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_email_notification" name="enable_ticket_email_notification">
+                            <label class="form-check-label" for="enable_ticket_email_notification">启用邮件通知</label>
+                        </div>
+                        <div class="form-text">启用后，工单状态变更时会发送邮件通知</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_sms_notification" name="enable_ticket_sms_notification">
+                            <label class="form-check-label" for="enable_ticket_sms_notification">启用短信通知</label>
+                        </div>
+                        <div class="form-text">启用后，紧急工单会发送短信通知</div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">保存设置</button>
+                </div>
+            </form>
         </div>
         
         <!-- 工作汇报设置 -->
@@ -337,7 +445,7 @@
                 <div class="accordion-item">
                     <h2 class="accordion-header" id="headingLicensePlate">
                         <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseLicensePlate" aria-expanded="true" aria-controls="collapseLicensePlate">
-                            <i class="fas fa-id-card me-2"></i> 车辆通行证管理
+                            <i class="fas fa-id-card me-2"></i> 车辆通行证
                         </button>
                     </h2>
                     <div id="collapseLicensePlate" class="accordion-collapse collapse show" aria-labelledby="headingLicensePlate">

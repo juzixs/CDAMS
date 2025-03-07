@@ -11,6 +11,7 @@
 </div>
 
 <form id="batchForm" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="mb-3">
         <div class="btn-group">
             <button type="button" class="btn btn-success" onclick="batchApprove()">
