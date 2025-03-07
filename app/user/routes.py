@@ -106,6 +106,10 @@ def profile(user_id=None):
             user.name = form.name.data
             user.department = form.department.data
             user.phone = form.phone.data
+            
+            # 如果是管理员编辑其他用户且提供了密码，则更新密码
+            if user_id and current_user.is_admin and form.password.data:
+                user.set_password(form.password.data)
                 
             db.session.commit()
             flash('个人资料已更新')
@@ -228,37 +232,59 @@ def delete_user(user_id):
 def batch_delete_users():
     """批量删除用户"""
     if not current_user.is_admin:
-        flash('权限不足', 'danger')
-        return redirect(url_for('license_plate.index'))
+        flash('您没有权限删除用户')
+        return redirect(url_for('user.users'))
     
-    user_ids = request.form.get('user_ids', '')
+    user_ids = request.form.getlist('user_ids')
     if not user_ids:
-        flash('未选择任何用户', 'warning')
+        flash('请选择要删除的用户')
         return redirect(url_for('user.users'))
     
-    user_id_list = [int(id) for id in user_ids.split(',') if id.isdigit()]
+    # 确保不会删除当前用户
+    if str(current_user.id) in user_ids:
+        flash('不能删除当前登录的用户')
+        user_ids.remove(str(current_user.id))
     
-    if current_user.id in user_id_list:
-        # 从列表中移除当前用户
-        user_id_list.remove(current_user.id)
-        flash('不能删除自己，已从选择列表中移除', 'warning')
-    
-    if not user_id_list:
-        flash('没有可删除的用户', 'warning')
-        return redirect(url_for('user.users'))
-    
-    deleted_count = 0
-    try:
-        users = User.query.filter(User.id.in_(user_id_list)).all()
+    if user_ids:
+        users = User.query.filter(User.id.in_(user_ids)).all()
         for user in users:
             db.session.delete(user)
-            deleted_count += 1
+        db.session.commit()
+        flash(f'已删除 {len(users)} 个用户')
+    
+    return redirect(url_for('user.users'))
+
+@bp.route('/auth-user', methods=['POST'])
+@login_required
+def auth_user():
+    """用户授权"""
+    if not current_user.is_admin:
+        flash('您没有权限修改用户权限')
+        return redirect(url_for('user.users'))
+    
+    user_id = request.form.get('user_id')
+    is_admin = 'is_admin' in request.form
+    
+    if not user_id:
+        flash('用户ID不能为空')
+        return redirect(url_for('user.users'))
+    
+    user = User.query.get_or_404(user_id)
+    
+    # 不能修改自己的管理员权限
+    if int(user_id) == current_user.id:
+        flash('不能修改自己的管理员权限')
+        return redirect(url_for('user.users'))
+    
+    try:
+        # 更新管理员权限
+        user.is_admin = is_admin
         
         db.session.commit()
-        flash(f'成功删除 {deleted_count} 个用户', 'success')
+        flash(f'用户 {user.username} 的权限已更新')
     except Exception as e:
         db.session.rollback()
-        flash(f'删除过程中发生错误: {str(e)}', 'danger')
+        flash(f'更新失败: {str(e)}')
     
     return redirect(url_for('user.users'))
 
