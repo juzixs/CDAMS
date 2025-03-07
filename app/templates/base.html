@@ -199,6 +199,11 @@
         <div class="sidebar-sticky">
             <ul class="nav flex-column">
                 <li class="nav-item">
+                    <a class="nav-link {% if request.endpoint.startswith('ticket') %}active{% endif %}" href="{{ url_for('ticket.index') }}">
+                        <i class="fas fa-ticket-alt"></i> 工单系统
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if request.endpoint.startswith('work_report') %}active{% endif %}" href="{{ url_for('work_report.index') }}">
                         <i class="fas fa-file-alt"></i> 工作汇报
                     </a>

@@ -46,6 +46,11 @@
             </button>
         </li>
         <li class="nav-item" role="presentation">
+            <button class="nav-link" id="ticket-tab" data-bs-toggle="tab" data-bs-target="#ticket" type="button" role="tab" aria-controls="ticket" aria-selected="false">
+                <i class="fas fa-ticket-alt"></i> 工单系统
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
             <button class="nav-link" id="canteen-tab" data-bs-toggle="tab" data-bs-target="#canteen" type="button" role="tab" aria-controls="canteen" aria-selected="false">
                 <i class="fas fa-utensils"></i> 食堂管理
             </button>
@@ -519,6 +524,63 @@
                     <p class="card-text">此模块的设置项正在开发中...</p>
                 </div>
             </div>
+        </div>
+
+        <!-- 工单系统设置 -->
+        <div class="tab-pane fade" id="ticket" role="tabpanel" aria-labelledby="ticket-tab">
+            <form method="post" action="#">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="form_type" value="ticket">
+                
+                <div class="mb-4">
+                    <h6>工单系统基本设置</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_system" name="enable_ticket_system">
+                            <label class="form-check-label" for="enable_ticket_system">启用工单系统</label>
+                        </div>
+                        <div class="form-text">启用后，用户可以创建和管理工单</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">默认工单处理人</label>
+                        <select class="form-select" name="default_ticket_handler">
+                            <option value="admin">系统管理员</option>
+                            <option value="department_head">部门主管</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">工单自动关闭时间（天）</label>
+                        <input type="number" class="form-control" name="ticket_auto_close_days" min="0" max="365" value="30">
+                        <div class="form-text">设置为0表示不自动关闭</div>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h6>工单通知设置</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_email_notification" name="enable_ticket_email_notification">
+                            <label class="form-check-label" for="enable_ticket_email_notification">启用邮件通知</label>
+                        </div>
+                        <div class="form-text">启用后，工单状态变更时会发送邮件通知</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_ticket_sms_notification" name="enable_ticket_sms_notification">
+                            <label class="form-check-label" for="enable_ticket_sms_notification">启用短信通知</label>
+                        </div>
+                        <div class="form-text">启用后，紧急工单会发送短信通知</div>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">保存设置</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
