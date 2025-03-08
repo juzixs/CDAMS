@@ -61,6 +61,8 @@ def create_app(config_class=Config):
 
     @app.route('/')
     def index():
+        if not current_user.is_authenticated:
+            return redirect(url_for('auth.login'))
         return render_template('index.html', title='首页')
 
     return app
