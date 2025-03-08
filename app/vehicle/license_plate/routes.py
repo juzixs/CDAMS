@@ -24,6 +24,7 @@ def index():
     status = request.args.get('status', '')
     vehicle_type = request.args.get('vehicle_type', '')
     department = request.args.get('department', '')
+    per_page = request.args.get('per_page', 10, type=int)
     
     query = Vehicle.query
     
@@ -45,7 +46,7 @@ def index():
     if department:
         query = query.filter_by(department=department)
     
-    vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
+    vehicles = query.order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=per_page)
     
     # 在会话中记录当前页面为车辆通行证页面
     session['vehicle_list_source'] = 'index'
@@ -66,7 +67,8 @@ def index():
 def pending():
     """待审核车辆列表"""
     page = request.args.get('page', 1, type=int)
-    vehicles = Vehicle.query.filter_by(status='pending').order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=10)
+    per_page = request.args.get('per_page', 10, type=int)
+    vehicles = Vehicle.query.filter_by(status='pending').order_by(Vehicle.created_at.desc()).paginate(page=page, per_page=per_page)
     
     # 在会话中记录当前页面为待审核页面
     session['vehicle_list_source'] = 'pending'
@@ -373,13 +375,76 @@ def batch_delete():
     vehicle_ids = request.form.getlist('vehicle_ids[]')
     if not vehicle_ids:
         return jsonify({'success': False, 'message': '请选择要删除的车辆'}), 400
-
+        
+    # 获取当前页码和每页显示条数
+    current_page = request.form.get('page', 1, type=int)
+    per_page = request.form.get('per_page', 10, type=int)
+    search = request.form.get('search', '')
+    status = request.form.get('status', '')
+    vehicle_type = request.form.get('vehicle_type', '')
+    department = request.form.get('department', '')
+    
     try:
+        # 先获取要删除的车辆
         vehicles = Vehicle.query.filter(Vehicle.id.in_(vehicle_ids)).all()
+        
+        # 执行删除操作
         for vehicle in vehicles:
             db.session.delete(vehicle)
         db.session.commit()
+        
+        # 查询总数，计算新的总页数
+        query = Vehicle.query
+        if search:
+            query = query.filter(
+                or_(
+                    Vehicle.plate_number.contains(search),
+                    Vehicle.owner_name.contains(search),
+                    Vehicle.department.contains(search)
+                )
+            )
+        
+        if status:
+            query = query.filter_by(status=status)
+            
+        if vehicle_type:
+            query = query.filter_by(vehicle_type=vehicle_type)
+            
+        if department:
+            query = query.filter_by(department=department)
+        
+        # 计算总记录数和总页数
+        total_items = query.count()
+        total_pages = (total_items + per_page - 1) // per_page if total_items > 0 else 1
+        
+        # 决定重定向策略
+        if total_items == 0:
+            # 如果没有任何数据，则重定向到第一页
+            return jsonify({
+                'success': True, 
+                'message': '删除成功',
+                'redirect': True,
+                'url': url_for('license_plate.index', page=1, 
+                              search=search, status=status, 
+                              vehicle_type=vehicle_type, department=department,
+                              per_page=per_page)
+            })
+        elif current_page > total_pages:
+            # 如果当前页超过了总页数，则重定向到最后一页
+            return jsonify({
+                'success': True, 
+                'message': '删除成功',
+                'redirect': True,
+                'url': url_for('license_plate.index', page=total_pages, 
+                              search=search, status=status, 
+                              vehicle_type=vehicle_type, department=department,
+                              per_page=per_page)
+            })
+        
+        # 当前页有效，无需重定向
         return jsonify({'success': True, 'message': '删除成功'})
     except Exception as e:
+        # 回滚事务并记录错误
         db.session.rollback()
-        return jsonify({'success': False, 'message': str(e)}), 500 
+        print(f"批量删除错误: {str(e)}")
+        return jsonify({'success': False, 'message': '删除操作失败，请稍后重试'}), 500 

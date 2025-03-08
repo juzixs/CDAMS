@@ -258,22 +258,49 @@ $(document).ready(function() {
                 vehicleIds.push($(this).val());
             });
 
+            // 获取当前页码和筛选条件
+            var currentPage = {{ vehicles.page }};
+            var search = "{{ search }}";
+            var status = "{{ status }}";
+            var vehicleType = "{{ vehicle_type }}";
+            var department = "{{ department }}";
+            var perPage = "{{ request.args.get('per_page', '10') }}";
+
             $.ajax({
                 url: "{{ url_for('license_plate.batch_delete') }}",
                 type: 'POST',
                 data: {
                     vehicle_ids: vehicleIds,
-                    csrf_token: "{{ form.csrf_token._value() }}"
+                    csrf_token: "{{ form.csrf_token._value() }}",
+                    page: currentPage,
+                    search: search,
+                    status: status,
+                    vehicle_type: vehicleType,
+                    department: department,
+                    per_page: perPage
                 },
                 success: function(response) {
                     if (response.success) {
-                        location.reload();
+                        if (response.redirect) {
+                            // 显示成功消息并重定向
+                            alert('删除成功');
+                            window.location.href = response.url;
+                        } else {
+                            // 显示成功消息并刷新
+                            alert('删除成功');
+                            location.reload();
+                        }
                     } else {
-                        alert(response.message);
+                        alert(response.message || '删除失败，请重试');
                     }
                 },
-                error: function() {
-                    alert('删除失败，请重试');
+                error: function(xhr, status, error) {
+                    console.error("删除请求错误:", error);
+                    var errorMsg = '删除失败，请重试';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMsg = xhr.responseJSON.message;
+                    }
+                    alert(errorMsg);
                 }
             });
         }
