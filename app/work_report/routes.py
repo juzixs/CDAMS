@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, date
 import json
-from flask import render_template, flash, redirect, url_for, request, current_app, jsonify
+import io
+import xlsxwriter
+from flask import render_template, flash, redirect, url_for, request, current_app, jsonify, send_file
 from flask_login import login_required, current_user
 from app.work_report import bp
 from app import db
@@ -387,7 +389,7 @@ def weekly_delete(report_id):
 @module_permission_required('report')
 def monthly():
     """月报管理"""
-    return render_template('work_report/monthly.html', title='月报管理')
+    return render_template('work_report/monthly.html', title='月报管理') 
 
 @bp.route('/settings', methods=['GET'])
 @login_required
@@ -593,4 +595,188 @@ def update_person_order():
         db.session.commit()
         flash('责任人排序设置已更新')
         
-    return redirect(url_for('work_report.settings')) 
+    return redirect(url_for('work_report.settings'))
+
+@bp.route('/weekly/export/<int:report_id>')
+@login_required
+@module_permission_required('report')
+def weekly_export(report_id):
+    """导出周报为Excel"""
+    # 获取周报
+    report = WeeklyReport.query.get_or_404(report_id)
+    
+    # 创建一个内存中的Excel文件
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output)
+    worksheet = workbook.add_worksheet("周报")
+    
+    # 设置单元格格式
+    title_format = workbook.add_format({'bold': True, 'font_size': 14, 'align': 'center', 'valign': 'vcenter'})
+    header_format = workbook.add_format({'bold': True, 'bg_color': '#D9EAD3', 'border': 1, 'align': 'center'})
+    cell_format = workbook.add_format({'border': 1, 'align': 'left', 'valign': 'vcenter', 'text_wrap': True})
+    # 项目标题格式（靠左显示）
+    section_title_format = workbook.add_format({'bold': True, 'bg_color': '#D9EAD3', 'border': 1, 'align': 'left', 'valign': 'vcenter'})
+    
+    # 设置列宽
+    headers = ["序号", "责任人", "工作内容", "目标完成结果", "时间节点", "是否完成", "执行结果检查", "拟采取措施", "预计完成时间"]
+    col_widths = [5, 10, 20, 20, 12, 10, 20, 15, 12]
+    for i, width in enumerate(col_widths):
+        worksheet.set_column(i, i, width)
+    
+    # 写入标题
+    current_row = 0
+    title = f"{report.start_date.year}年 第{report.week_number}周 部门周报 ({report.start_date} 至 {report.end_date})"
+    worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', title, title_format)
+    current_row += 1
+    
+    # 写入会议信息
+    worksheet.merge_range(f'A{current_row+1}:B{current_row+1}', "会议时间", header_format)
+    worksheet.merge_range(f'C{current_row+1}:D{current_row+1}', report.meeting_time.strftime('%Y-%m-%d') if report.meeting_time else '未设置', cell_format)
+    worksheet.merge_range(f'E{current_row+1}:F{current_row+1}', "会议地点", header_format)
+    worksheet.merge_range(f'G{current_row+1}:I{current_row+1}', report.meeting_place or '未设置', cell_format)
+    current_row += 1
+    
+    worksheet.merge_range(f'A{current_row+1}:B{current_row+1}', "主持人", header_format)
+    worksheet.merge_range(f'C{current_row+1}:D{current_row+1}', report.host or '未设置', cell_format)
+    worksheet.merge_range(f'E{current_row+1}:F{current_row+1}', "参会人员", header_format)
+    worksheet.merge_range(f'G{current_row+1}:I{current_row+1}', report.participants or '未设置', cell_format)
+    current_row += 1
+    
+    # 空一行
+    current_row += 1
+    
+    # 写入重点工作标题
+    worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "一、重点工作跟进/风险工作通报", section_title_format)
+    current_row += 1
+    
+    # 写入重点工作表头（紧接着标题行，没有空行）
+    for i, header in enumerate(headers):
+        worksheet.write(current_row, i, header, header_format)
+    current_row += 1
+    
+    # 写入重点工作内容
+    if report.key_works:
+        for i, work in enumerate(report.key_works):
+            worksheet.write(current_row, 0, i + 1, cell_format)
+            worksheet.write(current_row, 1, work.get('person', ''), cell_format)
+            worksheet.write(current_row, 2, work.get('content', ''), cell_format)
+            worksheet.write(current_row, 3, work.get('target', ''), cell_format)
+            worksheet.write(current_row, 4, work.get('timeline', ''), cell_format)
+            worksheet.write(current_row, 5, work.get('completed', ''), cell_format)
+            worksheet.write(current_row, 6, work.get('check', ''), cell_format)
+            worksheet.write(current_row, 7, work.get('measures', ''), cell_format)
+            worksheet.write(current_row, 8, work.get('expected_date', ''), cell_format)
+            current_row += 1
+    else:
+        worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "暂无重点工作记录", cell_format)
+        current_row += 1
+    
+    # 写入临时性工作标题（不空行）
+    worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "二、临时性工作安排", section_title_format)
+    current_row += 1
+    
+    # 写入临时性工作表头（紧接着标题行，没有空行）
+    for i, header in enumerate(headers):
+        worksheet.write(current_row, i, header, header_format)
+    current_row += 1
+    
+    # 写入临时性工作内容
+    if report.temp_works:
+        for i, work in enumerate(report.temp_works):
+            worksheet.write(current_row, 0, i + 1, cell_format)
+            worksheet.write(current_row, 1, work.get('person', ''), cell_format)
+            worksheet.write(current_row, 2, work.get('content', ''), cell_format)
+            worksheet.write(current_row, 3, work.get('target', ''), cell_format)
+            worksheet.write(current_row, 4, work.get('timeline', ''), cell_format)
+            worksheet.write(current_row, 5, work.get('completed', ''), cell_format)
+            worksheet.write(current_row, 6, work.get('check', ''), cell_format)
+            worksheet.write(current_row, 7, work.get('measures', ''), cell_format)
+            worksheet.write(current_row, 8, work.get('expected_date', ''), cell_format)
+            current_row += 1
+    else:
+        worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "暂无临时性工作记录", cell_format)
+        current_row += 1
+    
+    # 写入协调工作标题（不空行）
+    worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "三、协同事项/协调资源/需要决策事项", section_title_format)
+    current_row += 1
+    
+    # 写入协调工作表头（紧接着标题行，没有空行）
+    for i, header in enumerate(headers):
+        worksheet.write(current_row, i, header, header_format)
+    current_row += 1
+    
+    # 写入协调工作内容
+    if report.coordinations:
+        for i, work in enumerate(report.coordinations):
+            worksheet.write(current_row, 0, i + 1, cell_format)
+            worksheet.write(current_row, 1, work.get('person', ''), cell_format)
+            worksheet.write(current_row, 2, work.get('content', ''), cell_format)
+            worksheet.write(current_row, 3, work.get('target', ''), cell_format)
+            worksheet.write(current_row, 4, work.get('timeline', ''), cell_format)
+            worksheet.write(current_row, 5, work.get('completed', ''), cell_format)
+            worksheet.write(current_row, 6, work.get('check', ''), cell_format)
+            worksheet.write(current_row, 7, work.get('measures', ''), cell_format)
+            worksheet.write(current_row, 8, work.get('expected_date', ''), cell_format)
+            current_row += 1
+    else:
+        worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "暂无协调工作记录", cell_format)
+        current_row += 1
+    
+    # 写入会议共识标题（不空行）
+    worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "四、会议达成共识事项/领导指示与建议", section_title_format)
+    current_row += 1
+    
+    # 写入会议共识内容
+    if report.consensus:
+        paragraph_format = workbook.add_format({
+            'border': 1, 
+            'align': 'left', 
+            'valign': 'top', 
+            'text_wrap': True
+        })
+        
+        consensus_text = report.consensus
+        
+        # 更精确地计算所需行数
+        # 计算文本中的字符数和换行符数量
+        text_length = len(consensus_text)
+        line_breaks = consensus_text.count('\n')
+        
+        # 估算每行可容纳的字符数（基于总列宽）
+        total_width = sum(col_widths)
+        chars_per_line = total_width * 1.5  # 更保守的估计每行可容纳的字符数
+        
+        # 计算实际需要的行数
+        content_lines = text_length / chars_per_line
+        # 考虑换行符和一些额外空间，但不过度分配
+        estimated_lines = max(2, int(content_lines + line_breaks) + 1)
+        
+        # 合并单元格并写入内容
+        merge_range = f'A{current_row+1}:I{current_row+estimated_lines}'
+        worksheet.merge_range(merge_range, consensus_text, paragraph_format)
+        
+        # 设置行高 - 使用固定的标准行高
+        standard_row_height = 15  # 标准行高
+        for i in range(current_row, current_row+estimated_lines):
+            worksheet.set_row(i, standard_row_height)
+        
+        current_row += estimated_lines
+    else:
+        worksheet.merge_range(f'A{current_row+1}:I{current_row+1}', "暂无会议达成共识事项/领导指示与建议", cell_format)
+        current_row += 1
+    
+    # 关闭工作簿
+    workbook.close()
+    
+    # 设置文件指针到文件头
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f"周报-第{report.week_number}周-{report.start_date}-{report.end_date}.xlsx"
+    
+    # 返回Excel文件
+    return send_file(output, 
+                     as_attachment=True,
+                     download_name=filename,
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') 

@@ -17,6 +17,149 @@
         background-color: #f8f9fa;
         z-index: 2;
     }
+    
+    /* 打印样式 */
+    @media print {
+        /* 重置所有元素 */
+        * {
+            -webkit-print-color-adjust: exact !important;
+            color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        
+        /* 基本页面设置 */
+        html, body {
+            width: 100% !important;
+            height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background-color: white !important;
+            font-size: 12pt !important;
+            line-height: 1.4 !important;
+        }
+        
+        /* 隐藏所有不需要打印的元素 */
+        body > *:not(.container-fluid),
+        .container-fluid > *:not(.report-content),
+        .action-buttons,
+        .d-flex.flex-column.flex-md-row,
+        nav, 
+        header, 
+        footer, 
+        aside,
+        .sidebar, 
+        .navbar, 
+        .nav,
+        .no-print,
+        #header,
+        #navbar,
+        #sidebar,
+        #footer,
+        #nav,
+        .navbar-nav,
+        .navbar-brand,
+        .navbar-toggler,
+        .page-header,
+        button,
+        .btn,
+        .btn-group {
+            display: none !important;
+            height: 0 !important;
+            width: 0 !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            position: absolute !important;
+            overflow: hidden !important;
+            z-index: -9999 !important;
+        }
+        
+        /* 确保报告内容显示 */
+        .report-content {
+            display: block !important;
+            visibility: visible !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            z-index: 9999 !important;
+        }
+        
+        /* 容器样式 */
+        .container-fluid {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
+        }
+        
+        /* 卡片样式 */
+        .card {
+            border: none !important;
+            margin-bottom: 15px !important;
+            page-break-inside: avoid !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            overflow: visible !important;
+        }
+        
+        /* 卡片头部样式 */
+        .card-header {
+            background-color: #f8f9fa !important;
+            color: #000 !important;
+            border-bottom: 1px solid #ddd !important;
+            padding: 10px !important;
+        }
+        
+        /* 蓝色卡片头部改为黑白 */
+        .card-header.bg-primary {
+            background-color: #f8f9fa !important;
+            color: #000 !important;
+        }
+        
+        /* 表格样式 */
+        .table {
+            width: 100% !important;
+            margin-bottom: 1rem !important;
+            border-collapse: collapse !important;
+            page-break-inside: auto !important;
+        }
+        
+        .table th,
+        .table td {
+            border: 1px solid #ddd !important;
+            padding: 0.5rem !important;
+            page-break-inside: avoid !important;
+        }
+        
+        .table thead th {
+            background-color: #f2f2f2 !important;
+            color: #000 !important;
+            font-weight: bold !important;
+        }
+        
+        /* 文本样式 */
+        h2, h5 {
+            font-size: 14pt !important;
+            margin-bottom: 10px !important;
+            color: #000 !important;
+            page-break-after: avoid !important;
+        }
+        
+        p, span, div {
+            color: #000 !important;
+        }
+        
+        /* 页面设置 */
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -28,181 +171,304 @@
             <a href="{{ url_for('work_report.weekly') }}" class="btn btn-secondary me-md-2 mb-2 mb-md-0">
                 <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">返回周报列表</span>
             </a>
-            <a href="{{ url_for('work_report.weekly_edit', report_id=report.id) }}" class="btn btn-warning">
+            <a href="{{ url_for('work_report.weekly_edit', report_id=report.id) }}" class="btn btn-warning me-md-2 mb-2 mb-md-0">
                 <i class="fas fa-edit"></i> <span class="d-none d-sm-inline">编辑周报</span>
+            </a>
+            <button type="button" class="btn btn-info me-md-2 mb-2 mb-md-0" id="printReport">
+                <i class="fas fa-print"></i> <span class="d-none d-sm-inline">打印</span>
+            </button>
+            <a href="{{ url_for('work_report.weekly_export', report_id=report.id) }}" class="btn btn-success mb-2 mb-md-0">
+                <i class="fas fa-file-excel"></i> <span class="d-none d-sm-inline">导出EXCEL</span>
             </a>
         </div>
     </div>
     
-    <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0 fs-5">{{ report.start_date.year }}年 第{{ report.week_number }}周 部门周报 ({{ report.start_date }} 至 {{ report.end_date }})</h5>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6 mb-2">
-                    <strong>会议时间：</strong> {{ report.meeting_time.strftime('%Y-%m-%d') if report.meeting_time else '未设置' }}
+    <!-- 正常显示内容 -->
+    <div class="report-content">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 fs-5">{{ report.start_date.year }}年 第{{ report.week_number }}周 部门周报 ({{ report.start_date }} 至 {{ report.end_date }})</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-2">
+                        <strong>会议时间：</strong> {{ report.meeting_time.strftime('%Y-%m-%d') if report.meeting_time else '未设置' }}
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>会议地点：</strong> {{ report.meeting_place or '未设置' }}
+                    </div>
                 </div>
-                <div class="col-md-6 mb-2">
-                    <strong>会议地点：</strong> {{ report.meeting_place or '未设置' }}
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-6 mb-2">
-                    <strong>主持人：</strong> {{ report.host or '未设置' }}
-                </div>
-                <div class="col-md-6 mb-2">
-                    <strong>参会人员：</strong> {{ report.participants or '未设置' }}
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-2">
+                        <strong>主持人：</strong> {{ report.host or '未设置' }}
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <strong>参会人员：</strong> {{ report.participants or '未设置' }}
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0 fs-5">一、重点工作跟进/风险工作通报</h5>
-        </div>
-        <div class="card-body">
-            {% if key_works %}
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="3%">序号</th>
-                            <th width="8%">责任人</th>
-                            <th width="18%">工作内容</th>
-                            <th width="15%">目标完成结果</th>
-                            <th width="10%">时间节点</th>
-                            <th width="8%">是否完成</th>
-                            <th width="15%">执行结果检查</th>
-                            <th width="12%">拟采取措施</th>
-                            <th width="8%">预计完成时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for work in key_works %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ work.person }}</td>
-                            <td>{{ work.content }}</td>
-                            <td>{{ work.target }}</td>
-                            <td>{{ work.timeline }}</td>
-                            <td>{{ work.completed }}</td>
-                            <td>{{ work.check }}</td>
-                            <td>{{ work.measures }}</td>
-                            <td>{{ work.expected_date }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0 fs-5">一、重点工作跟进/风险工作通报</h5>
             </div>
-            {% else %}
-            <p class="text-muted">暂无重点工作记录</p>
-            {% endif %}
-        </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0 fs-5">二、临时性工作安排</h5>
-        </div>
-        <div class="card-body">
-            {% if report.temp_works %}
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="3%">序号</th>
-                            <th width="8%">责任人</th>
-                            <th width="18%">工作内容</th>
-                            <th width="15%">目标完成结果</th>
-                            <th width="10%">时间节点</th>
-                            <th width="8%">是否完成</th>
-                            <th width="15%">执行结果检查</th>
-                            <th width="12%">拟采取措施</th>
-                            <th width="8%">预计完成时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for work in report.temp_works %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ work.person }}</td>
-                            <td>{{ work.content }}</td>
-                            <td>{{ work.target }}</td>
-                            <td>{{ work.timeline }}</td>
-                            <td>{{ work.completed }}</td>
-                            <td>{{ work.check }}</td>
-                            <td>{{ work.measures }}</td>
-                            <td>{{ work.expected_date }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+            <div class="card-body">
+                {% if key_works %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="3%">序号</th>
+                                <th width="8%">责任人</th>
+                                <th width="18%">工作内容</th>
+                                <th width="15%">目标完成结果</th>
+                                <th width="10%">时间节点</th>
+                                <th width="8%">是否完成</th>
+                                <th width="15%">执行结果检查</th>
+                                <th width="12%">拟采取措施</th>
+                                <th width="8%">预计完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for work in key_works %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ work.person }}</td>
+                                <td>{{ work.content }}</td>
+                                <td>{{ work.target }}</td>
+                                <td>{{ work.timeline }}</td>
+                                <td>{{ work.completed }}</td>
+                                <td>{{ work.check }}</td>
+                                <td>{{ work.measures }}</td>
+                                <td>{{ work.expected_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无重点工作记录</p>
+                {% endif %}
             </div>
-            {% else %}
-            <p class="text-muted">暂无临时性工作记录</p>
-            {% endif %}
         </div>
-    </div>
-    
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5 class="mb-0 fs-5">三、协同事项/协调资源/需要决策事项</h5>
-        </div>
-        <div class="card-body">
-            {% if report.coordinations %}
-            <div class="table-responsive">
-                <table class="table table-bordered">
-                    <thead class="table-light">
-                        <tr>
-                            <th width="3%">序号</th>
-                            <th width="8%">责任人</th>
-                            <th width="18%">工作内容</th>
-                            <th width="15%">目标完成结果</th>
-                            <th width="10%">时间节点</th>
-                            <th width="8%">是否完成</th>
-                            <th width="15%">执行结果检查</th>
-                            <th width="12%">拟采取措施</th>
-                            <th width="8%">预计完成时间</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for work in report.coordinations %}
-                        <tr>
-                            <td>{{ loop.index }}</td>
-                            <td>{{ work.person }}</td>
-                            <td>{{ work.content }}</td>
-                            <td>{{ work.target }}</td>
-                            <td>{{ work.timeline }}</td>
-                            <td>{{ work.completed }}</td>
-                            <td>{{ work.check }}</td>
-                            <td>{{ work.measures }}</td>
-                            <td>{{ work.expected_date }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0 fs-5">二、临时性工作安排</h5>
             </div>
-            {% else %}
-            <p class="text-muted">暂无协调工作记录</p>
-            {% endif %}
-        </div>
-    </div>
-    
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0 fs-5">四、会议达成共识事项/领导指示与建议</h5>
-        </div>
-        <div class="card-body">
-            {% if report.consensus %}
-            <div class="card-text">
-                {{ report.consensus|nl2br|safe }}
+            <div class="card-body">
+                {% if report.temp_works %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="3%">序号</th>
+                                <th width="8%">责任人</th>
+                                <th width="18%">工作内容</th>
+                                <th width="15%">目标完成结果</th>
+                                <th width="10%">时间节点</th>
+                                <th width="8%">是否完成</th>
+                                <th width="15%">执行结果检查</th>
+                                <th width="12%">拟采取措施</th>
+                                <th width="8%">预计完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for work in report.temp_works %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ work.person }}</td>
+                                <td>{{ work.content }}</td>
+                                <td>{{ work.target }}</td>
+                                <td>{{ work.timeline }}</td>
+                                <td>{{ work.completed }}</td>
+                                <td>{{ work.check }}</td>
+                                <td>{{ work.measures }}</td>
+                                <td>{{ work.expected_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无临时性工作记录</p>
+                {% endif %}
             </div>
-            {% else %}
-            <p class="text-muted">暂无会议达成共识事项/领导指示与建议</p>
-            {% endif %}
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0 fs-5">三、协同事项/协调资源/需要决策事项</h5>
+            </div>
+            <div class="card-body">
+                {% if report.coordinations %}
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="3%">序号</th>
+                                <th width="8%">责任人</th>
+                                <th width="18%">工作内容</th>
+                                <th width="15%">目标完成结果</th>
+                                <th width="10%">时间节点</th>
+                                <th width="8%">是否完成</th>
+                                <th width="15%">执行结果检查</th>
+                                <th width="12%">拟采取措施</th>
+                                <th width="8%">预计完成时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for work in report.coordinations %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ work.person }}</td>
+                                <td>{{ work.content }}</td>
+                                <td>{{ work.target }}</td>
+                                <td>{{ work.timeline }}</td>
+                                <td>{{ work.completed }}</td>
+                                <td>{{ work.check }}</td>
+                                <td>{{ work.measures }}</td>
+                                <td>{{ work.expected_date }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">暂无协调工作记录</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0 fs-5">四、会议达成共识事项/领导指示与建议</h5>
+            </div>
+            <div class="card-body">
+                {% if report.consensus %}
+                <div class="card-text">
+                    {{ report.consensus|nl2br|safe }}
+                </div>
+                {% else %}
+                <p class="text-muted">暂无会议达成共识事项/领导指示与建议</p>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // 打印按钮点击事件
+    $('#printReport').click(function() {
+        // 创建打印样式
+        var printStyles = `
+            <style>
+                /* 重置所有元素 */
+                * {
+                    -webkit-print-color-adjust: exact !important;
+                    color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                
+                /* 隐藏所有不需要打印的元素 */
+                body > *:not(.print-container) {
+                    display: none !important;
+                }
+                
+                /* 打印容器样式 */
+                .print-container {
+                    display: block !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100% !important;
+                    background-color: white !important;
+                    z-index: 9999 !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                
+                /* 卡片样式 */
+                .card {
+                    border: none !important;
+                    margin-bottom: 15px !important;
+                    page-break-inside: avoid !important;
+                    width: 100% !important;
+                }
+                
+                /* 卡片头部样式 */
+                .card-header {
+                    background-color: #f8f9fa !important;
+                    color: #000 !important;
+                    border-bottom: 1px solid #ddd !important;
+                    padding: 10px !important;
+                }
+                
+                /* 蓝色卡片头部改为黑白 */
+                .card-header.bg-primary {
+                    background-color: #f8f9fa !important;
+                    color: #000 !important;
+                }
+                
+                /* 表格样式 */
+                .table {
+                    width: 100% !important;
+                    margin-bottom: 1rem !important;
+                    border-collapse: collapse !important;
+                }
+                
+                .table th,
+                .table td {
+                    border: 1px solid #ddd !important;
+                    padding: 0.5rem !important;
+                }
+                
+                .table thead th {
+                    background-color: #f2f2f2 !important;
+                    color: #000 !important;
+                }
+                
+                /* 文本样式 */
+                h2, h5 {
+                    font-size: 14pt !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+                
+                @page {
+                    size: A4 landscape;
+                    margin: 1cm;
+                }
+            </style>
+        `;
+        
+        // 获取报告内容
+        var reportContent = $('.report-content').clone();
+        
+        // 创建打印窗口
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write('<html><head><title>打印周报</title>');
+        printWindow.document.write(printStyles);
+        printWindow.document.write('</head><body>');
+        printWindow.document.write('<div class="print-container">');
+        printWindow.document.write(reportContent.html());
+        printWindow.document.write('</div></body></html>');
+        
+        // 等待图片加载完成后打印
+        printWindow.document.close();
+        printWindow.onload = function() {
+            printWindow.focus();
+            printWindow.print();
+            printWindow.onafterprint = function() {
+                printWindow.close();
+            };
+        };
+    });
+});
+</script>
 {% endblock %} 
