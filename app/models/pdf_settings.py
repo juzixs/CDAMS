@@ -12,6 +12,7 @@ class PDFSettings(db.Model):
     position_x = db.Column(db.Integer, nullable=False, default=1500)
     position_y = db.Column(db.Integer, nullable=False, default=930)
     background_image = db.Column(db.String(255), nullable=False, default='bj.png')
+    use_default_font = db.Column(db.Boolean, nullable=False, default=True)
     
     @property
     def text_color_tuple(self):
@@ -34,4 +35,5 @@ class PDFSettings(db.Model):
         self.outline_width = 0
         self.position_x = 1500
         self.position_y = 930
-        self.background_image = 'bj.png' 
+        self.background_image = 'bj.png'
+        self.use_default_font = True 

@@ -14,19 +14,125 @@
             <h5 class="mb-0">汇报模板设置</h5>
         </div>
         <div class="card-body">
-            <form method="post" action="#">
+            <form method="post" action="{{ url_for('work_report.update_template_settings') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="mb-3">
                     <label class="form-label">周报模板</label>
-                    <textarea class="form-control" name="weekly_template" rows="5" placeholder="请输入周报模板内容..."></textarea>
+                    <textarea class="form-control" name="weekly_template" rows="5" placeholder="请输入周报模板内容...">{{ settings.get('weekly_template', '') }}</textarea>
                     <div class="form-text">设置周报的默认模板格式</div>
                 </div>
                 
                 <div class="mb-3">
                     <label class="form-label">月报模板</label>
-                    <textarea class="form-control" name="monthly_template" rows="5" placeholder="请输入月报模板内容..."></textarea>
+                    <textarea class="form-control" name="monthly_template" rows="5" placeholder="请输入月报模板内容...">{{ settings.get('monthly_template', '') }}</textarea>
                     <div class="form-text">设置月报的默认模板格式</div>
+                </div>
+                
+                <div class="text-end">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 保存设置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 添加责任人排序设置 - 所有用户都可以访问 -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">责任人排序设置</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('work_report.update_person_order') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="mb-3">
+                    <label class="form-label">责任人排序</label>
+                    <p class="text-muted">设置责任人在周报中的显示顺序。相同责任人的工作项将相邻显示。行政部用户将优先排序，其他部门用户随后排序。</p>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> 排序规则说明：
+                        <ul class="mb-0">
+                            <li>行政部用户将优先显示</li>
+                            <li>非行政部用户将在行政部用户之后显示</li>
+                            <li>相同部门内按照列表顺序排序</li>
+                            <li>新添加的用户将按照部门自动排序</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-sm">
+                            <thead>
+                                <tr>
+                                    <th width="8%">排序</th>
+                                    <th>责任人</th>
+                                    <th width="15%">部门</th>
+                                    <th width="10%">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="person-order-list">
+                                {% for person in person_order %}
+                                <tr class="{% if person in admin_users %}table-primary{% elif person in nonexistent_users %}table-danger{% endif %}">
+                                    <td>{{ loop.index }}</td>
+                                    <td>
+                                        <input type="text" class="form-control form-control-sm" name="person_names[]" value="{{ person }}">
+                                    </td>
+                                    <td>
+                                        {% if person in admin_users %}
+                                            <span class="badge bg-primary">行政部</span>
+                                        {% elif person in other_users %}
+                                            <span class="badge bg-secondary">其他部门</span>
+                                        {% elif person in nonexistent_users %}
+                                            <span class="badge bg-danger">已删除</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-danger remove-person">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="row">
+                            <div class="col-md-6 mb-2">
+                                <div class="input-group">
+                                    <select class="form-select" id="user-select">
+                                        <optgroup label="行政部">
+                                            {% for user in admin_users %}
+                                                {% if user not in person_order %}
+                                                <option value="{{ user }}" data-department="行政部">{{ user }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </optgroup>
+                                        <optgroup label="其他部门">
+                                            {% for user in other_users %}
+                                                {% if user not in person_order %}
+                                                <option value="{{ user }}" data-department="其他">{{ user }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </optgroup>
+                                    </select>
+                                    <button type="button" class="btn btn-success" id="add-selected-person">
+                                        <i class="fas fa-plus"></i> 添加选中用户
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-sm btn-outline-primary" id="add-person">
+                                    <i class="fas fa-plus"></i> 添加自定义责任人
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-order">
+                                    <i class="fas fa-sync"></i> 重置默认排序
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="text-end">
@@ -43,12 +149,13 @@
             <h5 class="mb-0">提醒设置</h5>
         </div>
         <div class="card-body">
-            <form method="post" action="#">
+            <form method="post" action="{{ url_for('work_report.update_reminder_settings') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
                 <div class="mb-3">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder">
+                        <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder" 
+                               {% if settings.get('enable_weekly_reminder') %}checked{% endif %}>
                         <label class="form-check-label" for="enable_weekly_reminder">启用周报提醒</label>
                     </div>
                     <div class="form-text">每周五工作结束前提醒填写周报</div>
@@ -56,7 +163,8 @@
                 
                 <div class="mb-3">
                     <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder">
+                        <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder"
+                               {% if settings.get('enable_monthly_reminder') %}checked{% endif %}>
                         <label class="form-check-label" for="enable_monthly_reminder">启用月报提醒</label>
                     </div>
                     <div class="form-text">每月最后一个工作日提醒填写月报</div>
@@ -71,4 +179,93 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 添加自定义责任人
+    $('#add-person').click(function() {
+        var rowCount = $('#person-order-list tr').length + 1;
+        var newRow = `
+            <tr>
+                <td>${rowCount}</td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" name="person_names[]" value="">
+                </td>
+                <td>
+                    <span class="badge bg-warning">自定义</span>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger remove-person">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        $('#person-order-list').append(newRow);
+    });
+    
+    // 添加选中的用户
+    $('#add-selected-person').click(function() {
+        var selectedUser = $('#user-select').val();
+        var department = $('#user-select option:selected').data('department');
+        var departmentClass = department === '行政部' ? 'table-primary' : '';
+        var departmentBadge = department === '行政部' ? 
+            '<span class="badge bg-primary">行政部</span>' : 
+            '<span class="badge bg-secondary">其他部门</span>';
+            
+        if (selectedUser) {
+            var rowCount = $('#person-order-list tr').length + 1;
+            var newRow = `
+                <tr class="${departmentClass}">
+                    <td>${rowCount}</td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="person_names[]" value="${selectedUser}">
+                    </td>
+                    <td>
+                        ${departmentBadge}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger remove-person">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#person-order-list').append(newRow);
+            
+            // 从下拉列表中移除已添加的用户
+            $('#user-select option:selected').remove();
+            if ($('#user-select option').length === 0) {
+                $('#add-selected-person').prop('disabled', true);
+                $('#user-select').prop('disabled', true);
+            }
+        }
+    });
+    
+    // 删除责任人
+    $(document).on('click', '.remove-person', function() {
+        $(this).closest('tr').remove();
+        // 重新编号
+        $('#person-order-list tr').each(function(index) {
+            $(this).find('td:first').text(index + 1);
+        });
+    });
+    
+    // 重置默认排序
+    $('#reset-order').click(function() {
+        if (confirm('确定要重置为默认排序吗？这将按照"行政部用户优先，其他部门用户随后"的规则重新排序。')) {
+            // 提交空表单，后端会自动创建默认排序
+            $('form[action="{{ url_for("work_report.update_person_order") }}"]').submit();
+        }
+    });
+    
+    // 如果没有可选用户，禁用添加按钮
+    if ($('#user-select option').length === 0) {
+        $('#add-selected-person').prop('disabled', true);
+        $('#user-select').prop('disabled', true);
+    }
+});
+</script>
 {% endblock %} 

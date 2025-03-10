@@ -7,6 +7,12 @@ from app.extensions import db, migrate, login_manager, csrf
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # 设置运行时配置
+    if not app.config.get('HOST'):
+        app.config['HOST'] = '0.0.0.0'  # 默认监听所有网络接口
+    if not app.config.get('PORT'):
+        app.config['PORT'] = 5000       # 默认端口号
 
     # 初始化扩展
     db.init_app(app)

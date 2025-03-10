@@ -1,27 +1,96 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    /* 响应式设计样式 */
+    @media (max-width: 768px) {
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .action-buttons .btn {
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+        
+        .search-box {
+            margin-top: 1rem;
+        }
+    }
+    
+    /* 表格在小屏幕上的样式 */
+    @media (max-width: 576px) {
+        .report-table th, .report-table td {
+            font-size: 0.8rem;
+        }
+        
+        .report-table .btn-sm {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.7rem;
+        }
+    }
+    
+    /* 状态徽章样式 */
+    .status-badge {
+        cursor: pointer;
+    }
+    
+    /* 下拉菜单样式 */
+    .dropdown-menu {
+        min-width: 8rem;
+    }
+    
+    .dropdown-item.active {
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>周报管理</h2>
-        <div>
-            <a href="{{ url_for('work_report.index') }}" class="btn btn-secondary me-2">
-                <i class="fas fa-arrow-left"></i> 返回
+<div class="container-fluid px-2 px-md-3 px-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4">
+        <h2 class="mb-2 mb-md-0 fs-4 fs-md-3">周报管理</h2>
+        <div class="action-buttons">
+            <a href="{{ url_for('work_report.index') }}" class="btn btn-secondary me-md-2 mb-2 mb-md-0">
+                <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">返回</span>
             </a>
-            <button class="btn btn-success">
-                <i class="fas fa-plus"></i> 新建周报
-            </button>
+            <a href="{{ url_for('work_report.weekly_create') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">新建周报</span>
+            </a>
+        </div>
+    </div>
+    
+    <!-- 删除周报确认模态框 -->
+    <div class="modal fade" id="deleteReportModal" tabindex="-1" aria-labelledby="deleteReportModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteReportModalLabel">确认删除</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p>您确定要删除这份周报吗？此操作不可撤销。</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <form id="deleteReportForm" method="post" action="">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-danger">确认删除</button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
     
     <div class="card">
         <div class="card-header">
             <div class="row align-items-center">
-                <div class="col-md-6">
-                    <h5 class="mb-0">我的周报</h5>
+                <div class="col-md-6 mb-2 mb-md-0">
+                    <h5 class="mb-0 fs-5">部门周报</h5>
                 </div>
                 <div class="col-md-6">
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex justify-content-md-end search-box">
                         <div class="input-group" style="max-width: 300px;">
                             <input type="text" class="form-control" placeholder="搜索周报...">
                             <button class="btn btn-outline-secondary" type="button">
@@ -32,65 +101,187 @@
                 </div>
             </div>
         </div>
-        <div class="card-body">
+        <div class="card-body px-2 px-md-3 py-3">
             <div class="table-responsive">
-                <table class="table table-hover">
+                <table class="table table-hover report-table">
                     <thead>
                         <tr>
                             <th>周次</th>
-                            <th>时间范围</th>
-                            <th>提交时间</th>
+                            <th class="d-none d-sm-table-cell">时间范围</th>
+                            <th class="d-none d-md-table-cell">提交时间</th>
                             <th>状态</th>
                             <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
+                        {% for report in reports %}
                         <tr>
-                            <td>第12周</td>
-                            <td>2025-03-03 至 2025-03-09</td>
-                            <td>2025-03-07 18:30</td>
-                            <td><span class="badge bg-success">已提交</span></td>
+                            <td>{{ report.start_date.year }}年 第{{ report.week_number }}周</td>
+                            <td class="d-none d-sm-table-cell">{{ report.start_date }} 至 {{ report.end_date }}</td>
+                            <td class="d-none d-md-table-cell">{{ report.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
-                                <button class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i> 查看
-                                </button>
-                                <button class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i> 编辑
+                                {% if report.status == 'draft' %}
+                                <div class="dropdown">
+                                    <span class="badge bg-warning dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        草稿
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        <li><span class="dropdown-item active">草稿</span></li>
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="submitted">提交</a></li>
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="archived">归档</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% elif report.status == 'submitted' %}
+                                <div class="dropdown">
+                                    <span class="badge bg-success dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        提交
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="draft">草稿</a></li>
+                                        <li><span class="dropdown-item active">提交</span></li>
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="archived">归档</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% elif report.status == 'archived' %}
+                                <div class="dropdown">
+                                    <span class="badge bg-primary dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        归档
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="draft">草稿</a></li>
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="submitted">提交</a></li>
+                                        <li><span class="dropdown-item active">归档</span></li>
+                                        {% else %}
+                                        <li><span class="dropdown-item disabled">归档状态不可更改</span></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ url_for('work_report.weekly_view', report_id=report.id) }}" class="btn btn-sm btn-info">
+                                    <i class="fas fa-eye"></i> <span class="d-none d-md-inline">查看</span>
+                                </a>
+                                <a href="{{ url_for('work_report.weekly_edit', report_id=report.id) }}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-edit"></i> <span class="d-none d-md-inline">编辑</span>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-danger delete-report" data-id="{{ report.id }}" data-bs-toggle="modal" data-bs-target="#deleteReportModal">
+                                    <i class="fas fa-trash"></i> <span class="d-none d-md-inline">删除</span>
                                 </button>
                             </td>
                         </tr>
+                        {% else %}
                         <tr>
-                            <td>第11周</td>
-                            <td>2025-02-24 至 2025-03-02</td>
-                            <td>2025-02-28 17:45</td>
-                            <td><span class="badge bg-success">已提交</span></td>
-                            <td>
-                                <button class="btn btn-sm btn-primary">
-                                    <i class="fas fa-eye"></i> 查看
-                                </button>
-                                <button class="btn btn-sm btn-warning">
-                                    <i class="fas fa-edit"></i> 编辑
-                                </button>
-                            </td>
+                            <td colspan="5" class="text-center">暂无周报记录</td>
                         </tr>
+                        {% endfor %}
                     </tbody>
                 </table>
             </div>
             
-            <nav aria-label="Page navigation">
-                <ul class="pagination justify-content-center">
+            <nav aria-label="Page navigation" class="mt-3">
+                <ul class="pagination justify-content-center flex-wrap">
+                    {% if pagination.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('work_report.weekly', page=pagination.prev_num) }}" tabindex="-1">上一页</a>
+                    </li>
+                    {% else %}
                     <li class="page-item disabled">
                         <a class="page-link" href="#" tabindex="-1" aria-disabled="true">上一页</a>
                     </li>
-                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                    <li class="page-item"><a class="page-link" href="#">2</a></li>
-                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                    {% endif %}
+                    
+                    {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                        {% if page %}
+                            {% if page == pagination.page %}
+                            <li class="page-item active">
+                                <a class="page-link" href="{{ url_for('work_report.weekly', page=page) }}">{{ page }}</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('work_report.weekly', page=page) }}">{{ page }}</a>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">...</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if pagination.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="#">下一页</a>
+                        <a class="page-link" href="{{ url_for('work_report.weekly', page=pagination.next_num) }}">下一页</a>
                     </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-disabled="true">下一页</a>
+                    </li>
+                    {% endif %}
                 </ul>
             </nav>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+$(document).ready(function() {
+    // 处理删除按钮点击事件
+    $('.delete-report').click(function() {
+        var reportId = $(this).data('id');
+        $('#deleteReportForm').attr('action', "{{ url_for('work_report.weekly_delete', report_id=0) }}".replace('0', reportId));
+    });
+    
+    // 处理状态更改点击事件
+    $('.change-status').click(function(e) {
+        e.preventDefault();
+        
+        var reportId = $(this).data('id');
+        var newStatus = $(this).data('status');
+        var statusBadge = $('#status-' + reportId);
+        var statusCell = statusBadge.closest('td');
+        
+        // 显示加载状态
+        var originalHtml = statusCell.html();
+        statusCell.html('<div class="text-center"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        // 发送AJAX请求更新状态
+        $.ajax({
+            url: "{{ url_for('work_report.update_report_status', report_id=0) }}".replace('0', reportId),
+            type: 'POST',
+            data: {
+                'status': newStatus,
+                'csrf_token': "{{ csrf_token() }}"
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // 刷新页面以显示更新后的状态
+                    location.reload();
+                } else {
+                    // 显示错误消息
+                    alert(response.message || '状态更新失败');
+                    statusCell.html(originalHtml);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = '状态更新失败';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                alert(errorMsg);
+                statusCell.html(originalHtml);
+            }
+        });
+    });
+});
+</script>
 {% endblock %} 

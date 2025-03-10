@@ -177,222 +177,107 @@
                 <div class="card-body">
                     <h5 class="card-title">工作汇报设置</h5>
                     
-                    <ul class="nav nav-tabs mb-3" id="workReportSubTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="template-tab" data-bs-toggle="tab" data-bs-target="#template" type="button" role="tab" aria-controls="template" aria-selected="true">
-                                <i class="fas fa-file-alt"></i> 模板设置
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="reminder-tab" data-bs-toggle="tab" data-bs-target="#reminder" type="button" role="tab" aria-controls="reminder" aria-selected="false">
-                                <i class="fas fa-bell"></i> 提醒设置
-                            </button>
-                        </li>
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link" id="approval-tab" data-bs-toggle="tab" data-bs-target="#approval" type="button" role="tab" aria-controls="approval" aria-selected="false">
-                                <i class="fas fa-check-circle"></i> 审批流程
-                            </button>
-                        </li>
-                    </ul>
-                    
-                    <div class="tab-content" id="workReportSubTabContent">
-                        <!-- 模板设置 -->
-                        <div class="tab-pane fade show active" id="template" role="tabpanel" aria-labelledby="template-tab">
-                            <form method="post" action="#">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="form_type" value="template">
-                                
-                                <div class="mb-4">
-                                    <h6>周报模板</h6>
-                                    <div class="mb-3">
-                                        <textarea class="form-control" name="weekly_template" rows="5" placeholder="请输入周报模板内容...">本周工作内容：
-1. 
-2. 
-3. 
-
-下周工作计划：
-1. 
-2. 
-3. 
-
-工作难点及解决方案：
-
-其他说明：</textarea>
-                                        <div class="form-text">设置周报的默认模板格式</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <h6>月报模板</h6>
-                                    <div class="mb-3">
-                                        <textarea class="form-control" name="monthly_template" rows="5" placeholder="请输入月报模板内容...">本月工作总结：
-1. 
-2. 
-3. 
-
-下月工作计划：
-1. 
-2. 
-3. 
-
-重点项目进展：
-
-问题及建议：</textarea>
-                                        <div class="form-text">设置月报的默认模板格式</div>
-                                    </div>
-                                </div>
-                                
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> 保存模板设置
-                                    </button>
-                                </div>
-                            </form>
+                    <!-- 责任人排序设置 -->
+                    <div class="mt-4">
+                        <h6>责任人排序设置</h6>
+                        <p class="text-muted">设置责任人在周报中的显示顺序。相同责任人的工作项将相邻显示。行政部用户将优先排序，其他部门用户随后排序。</p>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i> 排序规则说明：
+                            <ul class="mb-0">
+                                <li>行政部用户将优先显示</li>
+                                <li>非行政部用户将在行政部用户之后显示</li>
+                                <li>相同部门内按照列表顺序排序</li>
+                                <li>新添加的用户将按照部门自动排序</li>
+                                <li><strong>提示：</strong> 可以拖动行来调整排序顺序</li>
+                            </ul>
                         </div>
                         
-                        <!-- 提醒设置 -->
-                        <div class="tab-pane fade" id="reminder" role="tabpanel" aria-labelledby="reminder-tab">
-                            <form method="post" action="#">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="form_type" value="reminder">
-                                
-                                <div class="mb-4">
-                                    <h6>周报提醒</h6>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder" checked>
-                                            <label class="form-check-label" for="enable_weekly_reminder">启用周报提醒</label>
+                        <form method="post" action="{{ url_for('settings.update_work_report_paging') }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th width="8%">排序</th>
+                                            <th>责任人</th>
+                                            <th width="15%">部门</th>
+                                            <th width="10%">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="person-order-list" class="sortable-list">
+                                        {% for person in person_order %}
+                                        <tr class="{% if person in admin_users %}table-primary{% elif person in nonexistent_users %}table-danger{% endif %} sortable-item" data-id="{{ loop.index }}">
+                                            <td class="handle">
+                                                <i class="fas fa-grip-vertical text-muted"></i>
+                                                <span class="order-num">{{ loop.index }}</span>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control form-control-sm" name="person_names[]" value="{{ person }}">
+                                            </td>
+                                            <td>
+                                                {% if person in admin_users %}
+                                                    <span class="badge bg-primary">行政部</span>
+                                                {% elif person in other_users %}
+                                                    <span class="badge bg-secondary">其他部门</span>
+                                                {% elif person in nonexistent_users %}
+                                                    <span class="badge bg-danger">已删除</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button type="button" class="btn btn-sm btn-danger remove-person">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <div class="input-group">
+                                            <select class="form-select" id="user-select">
+                                                <optgroup label="行政部">
+                                                    {% for user in admin_users %}
+                                                        {% if user not in person_order %}
+                                                        <option value="{{ user }}" data-department="行政部">{{ user }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </optgroup>
+                                                <optgroup label="其他部门">
+                                                    {% for user in other_users %}
+                                                        {% if user not in person_order %}
+                                                        <option value="{{ user }}" data-department="其他">{{ user }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </optgroup>
+                                            </select>
+                                            <button type="button" class="btn btn-success" id="add-selected-person">
+                                                <i class="fas fa-plus"></i> 添加选中用户
+                                            </button>
                                         </div>
-                                        <div class="form-text">每周五工作结束前提醒填写周报</div>
                                     </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">提醒时间</label>
-                                                <select class="form-select" name="weekly_reminder_time">
-                                                    <option value="15:00">15:00</option>
-                                                    <option value="16:00">16:00</option>
-                                                    <option value="17:00" selected>17:00</option>
-                                                    <option value="18:00">18:00</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">提醒方式</label>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="weekly_reminder_email" name="weekly_reminder_email" checked>
-                                                    <label class="form-check-label" for="weekly_reminder_email">邮件提醒</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="weekly_reminder_system" name="weekly_reminder_system" checked>
-                                                    <label class="form-check-label" for="weekly_reminder_system">系统提醒</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <h6>月报提醒</h6>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder" checked>
-                                            <label class="form-check-label" for="enable_monthly_reminder">启用月报提醒</label>
-                                        </div>
-                                        <div class="form-text">每月最后一个工作日提醒填写月报</div>
-                                    </div>
-                                    
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">提醒时间</label>
-                                                <select class="form-select" name="monthly_reminder_time">
-                                                    <option value="15:00">15:00</option>
-                                                    <option value="16:00">16:00</option>
-                                                    <option value="17:00" selected>17:00</option>
-                                                    <option value="18:00">18:00</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">提醒方式</label>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="monthly_reminder_email" name="monthly_reminder_email" checked>
-                                                    <label class="form-check-label" for="monthly_reminder_email">邮件提醒</label>
-                                                </div>
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" id="monthly_reminder_system" name="monthly_reminder_system" checked>
-                                                    <label class="form-check-label" for="monthly_reminder_system">系统提醒</label>
-                                                </div>
-                                            </div>
-                                        </div>
+                                    <div class="col-md-6">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="add-person">
+                                            <i class="fas fa-plus"></i> 添加自定义责任人
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="reset-order">
+                                            <i class="fas fa-sync"></i> 重置默认排序
+                                        </button>
                                     </div>
                                 </div>
-                                
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> 保存提醒设置
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                        
-                        <!-- 审批流程 -->
-                        <div class="tab-pane fade" id="approval" role="tabpanel" aria-labelledby="approval-tab">
-                            <form method="post" action="#">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                <input type="hidden" name="form_type" value="approval">
-                                
-                                <div class="mb-4">
-                                    <h6>周报审批流程</h6>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="enable_weekly_approval" name="enable_weekly_approval">
-                                            <label class="form-check-label" for="enable_weekly_approval">启用周报审批</label>
-                                        </div>
-                                        <div class="form-text">启用后，周报需要经过审批才能最终提交</div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">审批人</label>
-                                        <select class="form-select" name="weekly_approver">
-                                            <option value="direct_manager">直接上级</option>
-                                            <option value="department_head">部门主管</option>
-                                            <option value="custom">自定义</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="mb-4">
-                                    <h6>月报审批流程</h6>
-                                    <div class="mb-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" id="enable_monthly_approval" name="enable_monthly_approval" checked>
-                                            <label class="form-check-label" for="enable_monthly_approval">启用月报审批</label>
-                                        </div>
-                                        <div class="form-text">启用后，月报需要经过审批才能最终提交</div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label class="form-label">审批人</label>
-                                        <select class="form-select" name="monthly_approver">
-                                            <option value="direct_manager">直接上级</option>
-                                            <option value="department_head" selected>部门主管</option>
-                                            <option value="custom">自定义</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="text-end">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save"></i> 保存审批设置
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+                            
+                            <div class="text-end mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> 保存设置
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -583,7 +468,9 @@
                                             </div>
                                         </div>
                                     </form>
-                                    <form id="reset-form" action="{{ url_for('settings.reset_defaults') }}" method="post" style="display: none;"></form>
+                                    <form id="reset-form" action="{{ url_for('settings.reset_defaults') }}" method="post" style="display: none;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    </form>
                                 </div>
                                 
                                 <div class="col-md-4">
@@ -633,31 +520,129 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
+<!-- 添加Sortable.js库 -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // 初始化所有标签页
-    var tabElements = document.querySelectorAll('[data-bs-toggle="tab"]');
-    tabElements.forEach(function(tabElement) {
-        new bootstrap.Tab(tabElement);
+$(document).ready(function() {
+    // 初始化拖动排序
+    var sortableList = document.getElementById('person-order-list');
+    if (sortableList) {
+        new Sortable(sortableList, {
+            handle: '.handle',
+            animation: 150,
+            ghostClass: 'bg-light',
+            onEnd: function() {
+                // 重新编号
+                $('#person-order-list tr').each(function(index) {
+                    $(this).find('.order-num').text(index + 1);
+                });
+            }
+        });
+    }
+    
+    // 添加自定义责任人
+    $('#add-person').click(function() {
+        var rowCount = $('#person-order-list tr').length + 1;
+        var newRow = `
+            <tr class="sortable-item" data-id="${rowCount}">
+                <td class="handle">
+                    <i class="fas fa-grip-vertical text-muted"></i>
+                    <span class="order-num">${rowCount}</span>
+                </td>
+                <td>
+                    <input type="text" class="form-control form-control-sm" name="person_names[]" value="">
+                </td>
+                <td>
+                    <span class="badge bg-warning">自定义</span>
+                </td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-danger remove-person">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        $('#person-order-list').append(newRow);
     });
-
-    // 初始化所有折叠面板
-    var collapseElements = document.querySelectorAll('.collapse');
-    collapseElements.forEach(function(collapseElement) {
-        new bootstrap.Collapse(collapseElement, {
-            toggle: false
+    
+    // 添加选中的用户
+    $('#add-selected-person').click(function() {
+        var selectedUser = $('#user-select').val();
+        var department = $('#user-select option:selected').data('department');
+        var departmentClass = department === '行政部' ? 'table-primary' : '';
+        var departmentBadge = department === '行政部' ? 
+            '<span class="badge bg-primary">行政部</span>' : 
+            '<span class="badge bg-secondary">其他部门</span>';
+            
+        if (selectedUser) {
+            var rowCount = $('#person-order-list tr').length + 1;
+            var newRow = `
+                <tr class="${departmentClass} sortable-item" data-id="${rowCount}">
+                    <td class="handle">
+                        <i class="fas fa-grip-vertical text-muted"></i>
+                        <span class="order-num">${rowCount}</span>
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="person_names[]" value="${selectedUser}">
+                    </td>
+                    <td>
+                        ${departmentBadge}
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger remove-person">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            $('#person-order-list').append(newRow);
+            
+            // 从下拉列表中移除已添加的用户
+            $('#user-select option:selected').remove();
+            if ($('#user-select option').length === 0) {
+                $('#add-selected-person').prop('disabled', true);
+                $('#user-select').prop('disabled', true);
+            }
+        }
+    });
+    
+    // 删除责任人
+    $(document).on('click', '.remove-person', function() {
+        $(this).closest('tr').remove();
+        // 重新编号
+        $('#person-order-list tr').each(function(index) {
+            $(this).find('.order-num').text(index + 1);
         });
     });
-
-    // 为标签页添加点击事件监听
-    var tabs = document.querySelectorAll('#settingsTabs button');
-    tabs.forEach(function(tab) {
-        tab.addEventListener('click', function(event) {
-            event.preventDefault();
-            var tab = new bootstrap.Tab(this);
-            tab.show();
-        });
+    
+    // 重置默认排序
+    $('#reset-order').click(function() {
+        if (confirm('确定要重置为默认排序吗？这将按照"行政部用户优先，其他部门用户随后"的规则重新排序。')) {
+            // 提交空表单，后端会自动创建默认排序
+            $('form[action="{{ url_for("settings.update_work_report_paging") }}"]').submit();
+        }
     });
+    
+    // 如果没有可选用户，禁用添加按钮
+    if ($('#user-select option').length === 0) {
+        $('#add-selected-person').prop('disabled', true);
+        $('#user-select').prop('disabled', true);
+    }
 });
 </script>
+
+<style>
+/* 拖动排序样式 */
+.sortable-list .handle {
+    cursor: move;
+}
+.sortable-list .handle i {
+    margin-right: 5px;
+}
+.sortable-ghost {
+    opacity: 0.5;
+    background-color: #f8f9fa !important;
+}
+</style>
 {% endblock %} 

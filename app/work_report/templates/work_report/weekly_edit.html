@@ -1,0 +1,542 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    /* 响应式表格样式 */
+    @media (max-width: 992px) {
+        /* 小屏幕设备表格样式 */
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .form-control-sm, .form-select-sm {
+            padding: 0.1rem 0.3rem;
+            font-size: 0.7rem;
+        }
+        
+        .btn-sm {
+            padding: 0.15rem 0.3rem;
+            font-size: 0.7rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        /* 更小的屏幕设备 */
+        .section-title h5 {
+            font-size: 1rem;
+        }
+        
+        .section-title .btn {
+            font-size: 0.75rem;
+            padding: 0.2rem 0.4rem;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        /* 超小屏幕设备表格转为卡片视图提示 */
+        .mobile-table-notice {
+            display: block !important;
+            margin-bottom: 10px;
+        }
+    }
+    
+    /* 通用表格样式 */
+    .table-wrapper {
+        position: relative;
+    }
+    
+    .mobile-table-notice {
+        display: none;
+        background-color: #fff3cd;
+        padding: 10px;
+        border-radius: 5px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    /* 表格风格优化 */
+    .table thead th {
+        position: sticky;
+        top: 0;
+        background-color: #f8f9fa;
+        z-index: 2;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-1 px-md-3 px-lg-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4">
+        <h2 class="mb-2 mb-md-0 fs-4 fs-md-3">编辑周报</h2>
+        <div class="d-flex">
+            <a href="{{ url_for('work_report.weekly') }}" class="btn btn-secondary me-2">
+                <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">返回</span>
+            </a>
+            <button type="button" class="btn btn-success" id="saveReport">
+                <i class="fas fa-save"></i> <span class="d-none d-sm-inline">保存</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0 fs-5">{{ report.start_date.year }}年 第{{ report.week_number }}周 部门周报 ({{ report.start_date }} 至 {{ report.end_date }})</h5>
+        </div>
+        <div class="card-body px-2 px-md-3 py-3">
+            <form id="weeklyReportForm" method="post" action="{{ url_for('work_report.weekly_update', report_id=report.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="mb-3">
+                            <label for="meeting_time" class="form-label">会议时间</label>
+                            <input type="date" class="form-control" id="meeting_time" name="meeting_time" value="{{ report.meeting_time.strftime('%Y-%m-%d') if report.meeting_time else '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="meeting_place" class="form-label">会议地点</label>
+                            <input type="text" class="form-control" id="meeting_place" name="meeting_place" value="{{ report.meeting_place }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-6 mb-3 mb-md-0">
+                        <div class="mb-3">
+                            <label for="host" class="form-label">主持人</label>
+                            <input type="text" class="form-control" id="host" name="host" value="{{ report.host }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="participants" class="form-label">参会人员</label>
+                            <input type="text" class="form-control" id="participants" name="participants" value="{{ report.participants }}">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 一、重点工作跟进/风险工作通报 -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2 section-title">
+                        <h5>一、重点工作跟进/风险工作通报</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary add-item" data-section="key-work">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <div class="mobile-table-notice d-none d-sm-none">
+                            <i class="fas fa-info-circle"></i> 横向滚动查看完整表格内容
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="key-work-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="3%">序号</th>
+                                        <th width="8%">责任人</th>
+                                        <th width="18%">工作内容</th>
+                                        <th width="15%">目标完成结果</th>
+                                        <th width="10%">时间节点</th>
+                                        <th width="8%">是否完成</th>
+                                        <th width="15%">执行结果检查</th>
+                                        <th width="12%">拟采取措施</th>
+                                        <th width="8%">预计完成时间</th>
+                                        <th width="3%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in report.key_works %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="key_work_person[]" value="{{ item.person }}">
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="key_work_content[]" rows="2">{{ item.content }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="key_work_target[]" rows="2">{{ item.target }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="key_work_timeline[]" value="{{ item.timeline }}">
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm" name="key_work_completed[]">
+                                                <option value="/" {% if item.completed == '/' or not item.completed %}selected{% endif %}>/</option>
+                                                <option value="已完成" {% if item.completed == '已完成' or item.completed == '是' %}selected{% endif %}>已完成</option>
+                                                <option value="未完成" {% if item.completed == '未完成' or item.completed == '否' %}selected{% endif %}>未完成</option>
+                                                <option value="进行中" {% if item.completed == '进行中' or item.completed == '部分' %}selected{% endif %}>进行中</option>
+                                                <option value="暂停" {% if item.completed == '暂停' %}selected{% endif %}>暂停</option>
+                                                <option value="终止" {% if item.completed == '终止' %}selected{% endif %}>终止</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="key_work_check[]" rows="2">{{ item.check }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="key_work_measures[]" rows="2">{{ item.measures }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="key_work_expected_date[]" value="{{ item.expected_date }}">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger delete-row">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 二、临时性工作安排 -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2 section-title">
+                        <h5>二、临时性工作安排（个人据实填写）</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary add-item" data-section="temp-work">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <div class="mobile-table-notice d-none d-sm-none">
+                            <i class="fas fa-info-circle"></i> 横向滚动查看完整表格内容
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="temp-work-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="3%">序号</th>
+                                        <th width="8%">责任人</th>
+                                        <th width="18%">工作内容</th>
+                                        <th width="15%">目标完成结果</th>
+                                        <th width="10%">时间节点</th>
+                                        <th width="8%">是否完成</th>
+                                        <th width="15%">执行结果检查</th>
+                                        <th width="12%">拟采取措施</th>
+                                        <th width="8%">预计完成时间</th>
+                                        <th width="3%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in report.temp_works %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="temp_work_person[]" value="{{ item.person }}">
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="temp_work_content[]" rows="2">{{ item.content }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="temp_work_target[]" rows="2">{{ item.target }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="temp_work_timeline[]" value="{{ item.timeline }}">
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm" name="temp_work_completed[]">
+                                                <option value="/" {% if item.completed == '/' or not item.completed %}selected{% endif %}>/</option>
+                                                <option value="已完成" {% if item.completed == '已完成' or item.completed == '是' %}selected{% endif %}>已完成</option>
+                                                <option value="未完成" {% if item.completed == '未完成' or item.completed == '否' %}selected{% endif %}>未完成</option>
+                                                <option value="进行中" {% if item.completed == '进行中' or item.completed == '部分' %}selected{% endif %}>进行中</option>
+                                                <option value="暂停" {% if item.completed == '暂停' %}selected{% endif %}>暂停</option>
+                                                <option value="终止" {% if item.completed == '终止' %}selected{% endif %}>终止</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="temp_work_check[]" rows="2">{{ item.check }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="temp_work_measures[]" rows="2">{{ item.measures }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="temp_work_expected_date[]" value="{{ item.expected_date }}">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger delete-row">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 三、协同事项/协调资源/需要决策事项 -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2 section-title">
+                        <h5>三、协同事项/协调资源/需要决策事项</h5>
+                        <button type="button" class="btn btn-sm btn-outline-primary add-item" data-section="coordination">
+                            <i class="fas fa-plus"></i> 添加
+                        </button>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <div class="mobile-table-notice d-none d-sm-none">
+                            <i class="fas fa-info-circle"></i> 横向滚动查看完整表格内容
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table table-bordered" id="coordination-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="3%">序号</th>
+                                        <th width="8%">责任人</th>
+                                        <th width="18%">工作内容</th>
+                                        <th width="15%">目标完成结果</th>
+                                        <th width="10%">时间节点</th>
+                                        <th width="8%">是否完成</th>
+                                        <th width="15%">执行结果检查</th>
+                                        <th width="12%">拟采取措施</th>
+                                        <th width="8%">预计完成时间</th>
+                                        <th width="3%">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in report.coordinations %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" name="coordination_person[]" value="{{ item.person }}">
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="coordination_content[]" rows="2">{{ item.content }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="coordination_target[]" rows="2">{{ item.target }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="coordination_timeline[]" value="{{ item.timeline }}">
+                                        </td>
+                                        <td>
+                                            <select class="form-select form-select-sm" name="coordination_completed[]">
+                                                <option value="/" {% if item.completed == '/' or not item.completed %}selected{% endif %}>/</option>
+                                                <option value="已完成" {% if item.completed == '已完成' or item.completed == '是' %}selected{% endif %}>已完成</option>
+                                                <option value="未完成" {% if item.completed == '未完成' or item.completed == '否' %}selected{% endif %}>未完成</option>
+                                                <option value="进行中" {% if item.completed == '进行中' or item.completed == '部分' %}selected{% endif %}>进行中</option>
+                                                <option value="暂停" {% if item.completed == '暂停' %}selected{% endif %}>暂停</option>
+                                                <option value="终止" {% if item.completed == '终止' %}selected{% endif %}>终止</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="coordination_check[]" rows="2">{{ item.check }}</textarea>
+                                        </td>
+                                        <td>
+                                            <textarea class="form-control form-control-sm" name="coordination_measures[]" rows="2">{{ item.measures }}</textarea>
+                                        </td>
+                                        <td>
+                                            <input type="date" class="form-control form-control-sm" name="coordination_expected_date[]" value="{{ item.expected_date }}">
+                                        </td>
+                                        <td>
+                                            <button type="button" class="btn btn-sm btn-danger delete-row">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 四、会议达成共识事项/领导指示与建议 -->
+                <div class="mb-4">
+                    <h5 class="mb-2 section-title">四、会议达成共识事项/领导指示与建议</h5>
+                    <textarea class="form-control" name="consensus" rows="5">{{ report.consensus }}</textarea>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 检查是否在移动设备上，显示表格滚动提示
+    if(window.innerWidth <= 576) {
+        $('.mobile-table-notice').removeClass('d-none').addClass('d-block');
+    }
+    
+    // 窗口大小改变时检查
+    $(window).resize(function() {
+        if(window.innerWidth <= 576) {
+            $('.mobile-table-notice').removeClass('d-none').addClass('d-block');
+        } else {
+            $('.mobile-table-notice').removeClass('d-block').addClass('d-none');
+        }
+    });
+
+    // 保存按钮点击事件
+    $('#saveReport').click(function() {
+        $('#weeklyReportForm').submit();
+    });
+    
+    // 添加行按钮点击事件
+    $('.add-item').click(function() {
+        var section = $(this).data('section');
+        var tableId = '#' + section + '-table';
+        var tbody = $(tableId + ' tbody');
+        var rowCount = tbody.children('tr').length + 1;
+        var userName = "{{ current_user.name }}";
+        
+        var newRow = '';
+        if (section === 'key-work') {
+            newRow = `
+                <tr>
+                    <td>${rowCount}</td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="key_work_person[]" value="${userName}">
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="key_work_content[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="key_work_target[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="key_work_timeline[]" value="">
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="key_work_completed[]">
+                            <option value="/">/</option>
+                            <option value="已完成">已完成</option>
+                            <option value="未完成">未完成</option>
+                            <option value="进行中">进行中</option>
+                            <option value="暂停">暂停</option>
+                            <option value="终止">终止</option>
+                        </select>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="key_work_check[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="key_work_measures[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="key_work_expected_date[]">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger delete-row">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        } else if (section === 'temp-work') {
+            newRow = `
+                <tr>
+                    <td>${rowCount}</td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="temp_work_person[]" value="${userName}">
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="temp_work_content[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="temp_work_target[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="temp_work_timeline[]" value="">
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="temp_work_completed[]">
+                            <option value="/">/</option>
+                            <option value="已完成">已完成</option>
+                            <option value="未完成">未完成</option>
+                            <option value="进行中">进行中</option>
+                            <option value="暂停">暂停</option>
+                            <option value="终止">终止</option>
+                        </select>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="temp_work_check[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="temp_work_measures[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="temp_work_expected_date[]">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger delete-row">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        } else if (section === 'coordination') {
+            newRow = `
+                <tr>
+                    <td>${rowCount}</td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" name="coordination_person[]" value="${userName}">
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="coordination_content[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="coordination_target[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="coordination_timeline[]" value="">
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" name="coordination_completed[]">
+                            <option value="/">/</option>
+                            <option value="已完成">已完成</option>
+                            <option value="未完成">未完成</option>
+                            <option value="进行中">进行中</option>
+                            <option value="暂停">暂停</option>
+                            <option value="终止">终止</option>
+                        </select>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="coordination_check[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <textarea class="form-control form-control-sm" name="coordination_measures[]" rows="2"></textarea>
+                    </td>
+                    <td>
+                        <input type="date" class="form-control form-control-sm" name="coordination_expected_date[]">
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-danger delete-row">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+        
+        tbody.append(newRow);
+        updateRowNumbers(tableId);
+    });
+    
+    // 删除行按钮点击事件（使用事件委托）
+    $(document).on('click', '.delete-row', function() {
+        var table = $(this).closest('table');
+        $(this).closest('tr').remove();
+        updateRowNumbers('#' + table.attr('id'));
+    });
+    
+    // 更新行号
+    function updateRowNumbers(tableId) {
+        $(tableId + ' tbody tr').each(function(index) {
+            $(this).find('td:first').text(index + 1);
+        });
+    }
+});
+</script>
+{% endblock %} 
