@@ -37,7 +37,7 @@
                         <option value="" selected disabled>-- 请选择 --</option>
                         {% for week in weeks %}
                         <option value="{{ week.number }}" data-start="{{ week.start_date }}" data-end="{{ week.end_date }}">
-                            第{{ week.number }}周 ({{ week.start_date }} 至 {{ week.end_date }})
+                            {{ week.start_date.split('-')[0] }}年 第{{ week.number }}周 ({{ week.start_date }} 至 {{ week.end_date }})
                         </option>
                         {% endfor %}
                     </select>

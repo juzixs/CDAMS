@@ -19,9 +19,17 @@ def index():
 @module_permission_required('report')
 def weekly():
     """周报管理"""
-    # 获取当前用户部门的所有周报
-    reports = WeeklyReport.query.order_by(WeeklyReport.week_number.desc()).all()
-    return render_template('work_report/weekly.html', title='周报管理', reports=reports)
+    # 获取分页参数
+    page = request.args.get('page', 1, type=int)
+    per_page = 15  # 每页显示15行
+    
+    # 获取当前用户部门的所有周报，并进行分页
+    pagination = WeeklyReport.query.order_by(WeeklyReport.week_number.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    reports = pagination.items
+    
+    return render_template('work_report/weekly.html', title='周报管理', reports=reports, pagination=pagination)
 
 @bp.route('/weekly/create', methods=['GET', 'POST'])
 @login_required
@@ -97,6 +105,8 @@ def weekly_edit(report_id):
     
     if request.method == 'POST':
         # 处理表单提交
+        # 这里应该有处理POST请求的代码
+        # 由于目前没有具体实现，我们保留pass但确保缩进正确
         pass
     
     # 准备数据
