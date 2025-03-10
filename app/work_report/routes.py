@@ -99,7 +99,7 @@ def weekly_update(report_id):
     
     # 更新基本信息
     if request.form.get('meeting_time'):
-        report.meeting_time = datetime.strptime(request.form.get('meeting_time'), '%Y-%m-%dT%H:%M')
+        report.meeting_time = datetime.strptime(request.form.get('meeting_time'), '%Y-%m-%d')
     report.meeting_place = request.form.get('meeting_place', '')
     report.host = request.form.get('host', '')
     report.participants = request.form.get('participants', '')
