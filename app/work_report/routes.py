@@ -77,67 +77,30 @@ def weekly_create():
     
     return render_template('work_report/weekly_create.html', title='新建周报', weeks=weeks)
 
-@bp.route('/weekly/<int:report_id>/edit', methods=['GET'])
+@bp.route('/weekly/edit/<int:report_id>', methods=['GET', 'POST'])
 @login_required
 @module_permission_required('report')
 def weekly_edit(report_id):
     """编辑周报"""
+    # 获取周报
     report = WeeklyReport.query.get_or_404(report_id)
     
-    # 不再检查创建者，因为module_permission_required装饰器已经确保了只有有权限的用户才能访问
-    # 所有拥有report模块权限的用户都可以编辑任何周报
+    # 检查权限
+    if report.user_id != current_user.id and not current_user.is_admin:
+        flash('您没有权限编辑此周报')
+        return redirect(url_for('work_report.weekly'))
     
-    # 打印加载时的工作项责任人顺序
-    print("编辑页面加载 - 重点工作责任人顺序:", [item['person'] for item in report.key_works])
+    # 如果周报已提交，不允许编辑
+    if report.status == 'approved' and not current_user.is_admin:
+        flash('已审批的周报不能编辑')
+        return redirect(url_for('work_report.weekly'))
     
-    # 如果系统设置了责任人排序，则按照排序顺序对工作项进行排序
-    from app.models import Setting
+    if request.method == 'POST':
+        # 处理表单提交
+        pass
     
-    person_order = []
-    person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
-    if person_order_setting:
-        try:
-            person_order = json.loads(person_order_setting.value)
-            print("编辑页面 - 责任人排序设置:", person_order)
-            
-            if person_order:
-                # 构建排序字典
-                person_order_dict = {name: idx for idx, name in enumerate(person_order)}
-                max_order = len(person_order)
-                
-                # 按责任人排序工作项，使相同责任人的工作项相邻
-                # 排序前先获取原始数据
-                key_works = report.key_works
-                temp_works = report.temp_works
-                coordinations = report.coordinations
-                
-                # 打印排序前的工作项责任人顺序
-                print("编辑页面排序前 - 重点工作责任人顺序:", [item.get('person', '') for item in key_works])
-                
-                # 应用排序
-                key_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
-                temp_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
-                coordinations.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
-                
-                # 打印排序后的工作项责任人顺序
-                print("编辑页面排序后 - 重点工作责任人顺序:", [item.get('person', '') for item in key_works])
-                
-                # 更新排序后的数据到report对象
-                report._key_works = json.dumps(key_works)
-                report._temp_works = json.dumps(temp_works)
-                report._coordinations = json.dumps(coordinations)
-                
-                # 保存更新到数据库
-                db.session.commit()
-                
-                # 打印应用排序后的工作项责任人顺序
-                print("编辑页面应用排序后 - 重点工作责任人顺序:", [item.get('person', '') for item in report.key_works])
-            else:
-                print("编辑页面 - 责任人排序设置为空列表，不进行排序")
-        except Exception as e:
-            print(f"编辑页面排序工作项时出错: {e}")
-    else:
-        print("编辑页面 - 未找到责任人排序设置")
+    # 准备数据
+    # ...
     
     return render_template('work_report/weekly_edit.html', title='编辑周报', report=report)
 
@@ -277,6 +240,136 @@ def weekly_update(report_id):
     flash('周报已保存')
     
     return redirect(url_for('work_report.weekly_edit', report_id=report.id))
+
+@bp.route('/weekly/view/<int:report_id>')
+@login_required
+@module_permission_required('report')
+def weekly_view(report_id):
+    """查看周报"""
+    # 获取周报
+    report = WeeklyReport.query.get_or_404(report_id)
+    
+    # 准备数据
+    try:
+        key_works = json.loads(report._key_works)
+    except:
+        key_works = []
+    
+    try:
+        temp_works = json.loads(report._temp_works)
+    except:
+        temp_works = []
+    
+    try:
+        coordinations = json.loads(report._coordinations)
+    except:
+        coordinations = []
+    
+    try:
+        next_week_plan = json.loads(report._next_week_plan)
+    except:
+        next_week_plan = []
+    
+    # 获取责任人排序
+    from app.models import Setting
+    person_order = []
+    person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
+    if person_order_setting:
+        try:
+            person_order = json.loads(person_order_setting.value)
+        except:
+            person_order = []
+    
+    # 按责任人排序工作项
+    sorted_key_works = []
+    sorted_temp_works = []
+    sorted_coordinations = []
+    sorted_next_week_plan = []
+    
+    if person_order:
+        # 对各类工作项按责任人排序
+        for person in person_order:
+            # 重点工作
+            for work in key_works:
+                if work.get('person') == person:
+                    sorted_key_works.append(work)
+            
+            # 临时工作
+            for work in temp_works:
+                if work.get('person') == person:
+                    sorted_temp_works.append(work)
+            
+            # 协调工作
+            for work in coordinations:
+                if work.get('person') == person:
+                    sorted_coordinations.append(work)
+            
+            # 下周计划
+            for plan in next_week_plan:
+                if plan.get('person') == person:
+                    sorted_next_week_plan.append(plan)
+        
+        # 添加未在排序列表中的责任人的工作项
+        for work in key_works:
+            if work.get('person') not in person_order:
+                sorted_key_works.append(work)
+        
+        for work in temp_works:
+            if work.get('person') not in person_order:
+                sorted_temp_works.append(work)
+        
+        for work in coordinations:
+            if work.get('person') not in person_order:
+                sorted_coordinations.append(work)
+        
+        for plan in next_week_plan:
+            if plan.get('person') not in person_order:
+                sorted_next_week_plan.append(plan)
+    else:
+        sorted_key_works = key_works
+        sorted_temp_works = temp_works
+        sorted_coordinations = coordinations
+        sorted_next_week_plan = next_week_plan
+    
+    # 创建一个带有排序后工作项的报告对象
+    report_with_sorted_items = report
+    report_with_sorted_items.temp_works = sorted_temp_works
+    report_with_sorted_items.coordinations = sorted_coordinations
+    report_with_sorted_items.next_week_plan = sorted_next_week_plan
+    
+    # 确保consensus数据可用
+    if not hasattr(report_with_sorted_items, 'consensus') or report_with_sorted_items.consensus is None:
+        report_with_sorted_items.consensus = ""
+    
+    return render_template('work_report/weekly_view.html', 
+                          title='查看周报', 
+                          report=report_with_sorted_items, 
+                          key_works=sorted_key_works)
+
+@bp.route('/weekly/delete/<int:report_id>', methods=['POST'])
+@login_required
+@module_permission_required('report')
+def weekly_delete(report_id):
+    """删除周报"""
+    # 获取周报
+    report = WeeklyReport.query.get_or_404(report_id)
+    
+    # 检查权限
+    if report.user_id != current_user.id and not current_user.is_admin:
+        flash('您没有权限删除此周报', 'danger')
+        return redirect(url_for('work_report.weekly'))
+    
+    # 如果周报已审批，普通用户不允许删除
+    if report.status == 'approved' and not current_user.is_admin:
+        flash('已审批的周报不能删除', 'danger')
+        return redirect(url_for('work_report.weekly'))
+    
+    # 删除周报
+    db.session.delete(report)
+    db.session.commit()
+    
+    flash('周报已成功删除', 'success')
+    return redirect(url_for('work_report.weekly'))
 
 @bp.route('/monthly')
 @login_required
