@@ -66,13 +66,13 @@ def weekly_create():
         flash('周报创建成功，请继续编辑内容')
         return redirect(url_for('work_report.weekly_edit', report_id=report.id))
     
-    # 生成可选的周次列表（当前周和前后4周）
+    # 生成可选的周次列表（当前周的前3周和后5周）
     today = date.today()
     # 找到本周的周一
     monday = today - timedelta(days=today.weekday())
     weeks = []
     
-    for i in range(-4, 5):  # 前4周到后4周
+    for i in range(-3, 6):  # 前3周到后5周
         week_monday = monday + timedelta(weeks=i)
         week_sunday = week_monday + timedelta(days=6)
         week_number = int(week_monday.strftime('%W')) + 1  # 周数从1开始
@@ -80,7 +80,8 @@ def weekly_create():
         weeks.append({
             'number': week_number,
             'start_date': week_monday.strftime('%Y-%m-%d'),
-            'end_date': week_sunday.strftime('%Y-%m-%d')
+            'end_date': week_sunday.strftime('%Y-%m-%d'),
+            'is_next_week': (i == 1)  # 标记是否是下一周
         })
     
     return render_template('work_report/weekly_create.html', title='新建周报', weeks=weeks)

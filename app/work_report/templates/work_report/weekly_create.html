@@ -34,9 +34,10 @@
                 <div class="mb-3">
                     <label for="week_number" class="form-label">选择周次</label>
                     <select class="form-select" id="week_number" name="week_number" required>
-                        <option value="" selected disabled>-- 请选择 --</option>
+                        <option value="" disabled>-- 请选择 --</option>
                         {% for week in weeks %}
-                        <option value="{{ week.number }}" data-start="{{ week.start_date }}" data-end="{{ week.end_date }}">
+                        <option value="{{ week.number }}" data-start="{{ week.start_date }}" data-end="{{ week.end_date }}"
+                            {% if week.is_next_week %}selected{% endif %}>
                             {{ week.start_date.split('-')[0] }}年 第{{ week.number }}周 ({{ week.start_date }} 至 {{ week.end_date }})
                         </option>
                         {% endfor %}
@@ -70,6 +71,16 @@
 {% block scripts %}
 <script>
 $(document).ready(function() {
+    // 页面加载时，自动填充默认选中的周次的日期范围
+    var selectedOption = $('#week_number').find('option:selected');
+    if(selectedOption.length > 0) {
+        var startDate = selectedOption.data('start');
+        var endDate = selectedOption.data('end');
+        
+        $('#start_date').val(startDate);
+        $('#end_date').val(endDate);
+    }
+    
     // 选择周次时自动填充日期范围
     $('#week_number').change(function() {
         var selectedOption = $(this).find('option:selected');
