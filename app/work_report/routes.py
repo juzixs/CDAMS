@@ -93,17 +93,16 @@ def weekly_create():
 @module_permission_required('report')
 def weekly_edit(report_id):
     """编辑周报"""
-    # 获取周报
     report = WeeklyReport.query.get_or_404(report_id)
     
     # 检查权限
     if report.user_id != current_user.id and not current_user.is_admin:
-        flash('您没有权限编辑此周报')
+        flash('您没有权限编辑此周报', 'danger')
         return redirect(url_for('work_report.weekly'))
     
-    # 如果周报已提交，不允许编辑
-    if report.status == 'approved' and not current_user.is_admin:
-        flash('已审批的周报不能编辑')
+    # 如果周报已归档，普通用户不能编辑
+    if report.status == 'archived' and not current_user.is_admin:
+        flash('已归档的周报不能编辑', 'danger')
         return redirect(url_for('work_report.weekly'))
     
     if request.method == 'POST':
@@ -364,7 +363,6 @@ def weekly_view(report_id):
 @module_permission_required('report')
 def weekly_delete(report_id):
     """删除周报"""
-    # 获取周报
     report = WeeklyReport.query.get_or_404(report_id)
     
     # 检查权限
@@ -372,16 +370,74 @@ def weekly_delete(report_id):
         flash('您没有权限删除此周报', 'danger')
         return redirect(url_for('work_report.weekly'))
     
-    # 如果周报已审批，普通用户不允许删除
-    if report.status == 'approved' and not current_user.is_admin:
-        flash('已审批的周报不能删除', 'danger')
+    # 如果周报已归档，普通用户不能删除
+    if report.status == 'archived' and not current_user.is_admin:
+        flash('已归档的周报不能删除', 'danger')
         return redirect(url_for('work_report.weekly'))
     
-    # 删除周报
     db.session.delete(report)
     db.session.commit()
     
     flash('周报已成功删除', 'success')
+    return redirect(url_for('work_report.weekly'))
+
+@bp.route('/weekly/update_status/<int:report_id>', methods=['POST'])
+@login_required
+@module_permission_required('report')
+def update_report_status(report_id):
+    """更新周报状态"""
+    report = WeeklyReport.query.get_or_404(report_id)
+    new_status = request.form.get('status')
+    
+    # 验证状态值是否有效
+    valid_statuses = ['draft', 'submitted', 'archived']
+    if new_status not in valid_statuses:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'success': False, 'message': '无效的状态值'}), 400
+        flash('无效的状态值', 'danger')
+        return redirect(url_for('work_report.weekly'))
+    
+    # 检查权限
+    if not current_user.is_admin:
+        # 普通用户只能将状态设置为草稿或提交
+        if new_status == 'archived':
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': '您没有权限将周报归档'}), 403
+            flash('您没有权限将周报归档', 'danger')
+            return redirect(url_for('work_report.weekly'))
+        
+        # 普通用户只能修改自己的周报
+        if report.user_id != current_user.id:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return jsonify({'success': False, 'message': '您没有权限修改此周报的状态'}), 403
+            flash('您没有权限修改此周报的状态', 'danger')
+            return redirect(url_for('work_report.weekly'))
+    
+    # 更新状态
+    report.status = new_status
+    db.session.commit()
+    
+    # 返回响应
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        status_display = {
+            'draft': '草稿',
+            'submitted': '提交',
+            'archived': '归档'
+        }
+        status_class = {
+            'draft': 'bg-warning',
+            'submitted': 'bg-success',
+            'archived': 'bg-primary'
+        }
+        return jsonify({
+            'success': True, 
+            'message': '状态已更新',
+            'status': new_status,
+            'statusDisplay': status_display.get(new_status),
+            'statusClass': status_class.get(new_status)
+        })
+    
+    flash('周报状态已更新', 'success')
     return redirect(url_for('work_report.weekly'))
 
 @bp.route('/monthly')

@@ -26,7 +26,7 @@ class WeeklyReport(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     user = db.relationship('User', backref=db.backref('weekly_reports', lazy='dynamic'))
     
-    # 状态：draft-草稿, submitted-已提交, approved-已审批
+    # 状态：draft-草稿, submitted-提交, archived-归档
     status = db.Column(db.String(20), default='draft')
     
     created_at = db.Column(db.DateTime, default=datetime.now)

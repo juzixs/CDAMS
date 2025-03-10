@@ -111,7 +111,7 @@ def create_weekly_report(week_number, start_date, end_date, user_id):
         _temp_works=json.dumps(temp_works),
         _coordinations=json.dumps(coordinations),
         user_id=user_id,
-        status=random.choice(["draft", "submitted", "approved"]),
+        status=random.choice(["draft", "submitted", "archived"]),
         created_at=datetime.now(),
         updated_at=datetime.now()
     )

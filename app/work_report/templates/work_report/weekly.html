@@ -30,6 +30,20 @@
             font-size: 0.7rem;
         }
     }
+    
+    /* 状态徽章样式 */
+    .status-badge {
+        cursor: pointer;
+    }
+    
+    /* 下拉菜单样式 */
+    .dropdown-menu {
+        min-width: 8rem;
+    }
+    
+    .dropdown-item.active {
+        font-weight: bold;
+    }
 </style>
 {% endblock %}
 
@@ -107,11 +121,46 @@
                             <td class="d-none d-md-table-cell">{{ report.updated_at.strftime('%Y-%m-%d %H:%M') }}</td>
                             <td>
                                 {% if report.status == 'draft' %}
-                                <span class="badge bg-warning">草稿</span>
+                                <div class="dropdown">
+                                    <span class="badge bg-warning dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        草稿
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        <li><span class="dropdown-item active">草稿</span></li>
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="submitted">提交</a></li>
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="archived">归档</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
                                 {% elif report.status == 'submitted' %}
-                                <span class="badge bg-success">已提交</span>
-                                {% elif report.status == 'approved' %}
-                                <span class="badge bg-primary">已审批</span>
+                                <div class="dropdown">
+                                    <span class="badge bg-success dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        提交
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="draft">草稿</a></li>
+                                        <li><span class="dropdown-item active">提交</span></li>
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="archived">归档</a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% elif report.status == 'archived' %}
+                                <div class="dropdown">
+                                    <span class="badge bg-primary dropdown-toggle status-badge" role="button" id="status-{{ report.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                                        归档
+                                    </span>
+                                    <ul class="dropdown-menu" aria-labelledby="status-{{ report.id }}">
+                                        {% if current_user.is_admin %}
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="draft">草稿</a></li>
+                                        <li><a class="dropdown-item change-status" href="#" data-id="{{ report.id }}" data-status="submitted">提交</a></li>
+                                        <li><span class="dropdown-item active">归档</span></li>
+                                        {% else %}
+                                        <li><span class="dropdown-item disabled">归档状态不可更改</span></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
                                 {% endif %}
                             </td>
                             <td>
@@ -189,6 +238,49 @@ $(document).ready(function() {
     $('.delete-report').click(function() {
         var reportId = $(this).data('id');
         $('#deleteReportForm').attr('action', "{{ url_for('work_report.weekly_delete', report_id=0) }}".replace('0', reportId));
+    });
+    
+    // 处理状态更改点击事件
+    $('.change-status').click(function(e) {
+        e.preventDefault();
+        
+        var reportId = $(this).data('id');
+        var newStatus = $(this).data('status');
+        var statusBadge = $('#status-' + reportId);
+        var statusCell = statusBadge.closest('td');
+        
+        // 显示加载状态
+        var originalHtml = statusCell.html();
+        statusCell.html('<div class="text-center"><div class="spinner-border spinner-border-sm text-secondary" role="status"><span class="visually-hidden">Loading...</span></div></div>');
+        
+        // 发送AJAX请求更新状态
+        $.ajax({
+            url: "{{ url_for('work_report.update_report_status', report_id=0) }}".replace('0', reportId),
+            type: 'POST',
+            data: {
+                'status': newStatus,
+                'csrf_token': "{{ csrf_token() }}"
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    // 刷新页面以显示更新后的状态
+                    location.reload();
+                } else {
+                    // 显示错误消息
+                    alert(response.message || '状态更新失败');
+                    statusCell.html(originalHtml);
+                }
+            },
+            error: function(xhr) {
+                var errorMsg = '状态更新失败';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                alert(errorMsg);
+                statusCell.html(originalHtml);
+            }
+        });
     });
 });
 </script>
