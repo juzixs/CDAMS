@@ -189,6 +189,7 @@
                                 <li>非行政部用户将在行政部用户之后显示</li>
                                 <li>相同部门内按照列表顺序排序</li>
                                 <li>新添加的用户将按照部门自动排序</li>
+                                <li><strong>提示：</strong> 可以拖动行来调整排序顺序</li>
                             </ul>
                         </div>
                         
@@ -205,10 +206,13 @@
                                             <th width="10%">操作</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="person-order-list">
+                                    <tbody id="person-order-list" class="sortable-list">
                                         {% for person in person_order %}
-                                        <tr class="{% if person in admin_users %}table-primary{% elif person in nonexistent_users %}table-danger{% endif %}">
-                                            <td>{{ loop.index }}</td>
+                                        <tr class="{% if person in admin_users %}table-primary{% elif person in nonexistent_users %}table-danger{% endif %} sortable-item" data-id="{{ loop.index }}">
+                                            <td class="handle">
+                                                <i class="fas fa-grip-vertical text-muted"></i>
+                                                <span class="order-num">{{ loop.index }}</span>
+                                            </td>
                                             <td>
                                                 <input type="text" class="form-control form-control-sm" name="person_names[]" value="{{ person }}">
                                             </td>
@@ -464,7 +468,9 @@
                                             </div>
                                         </div>
                                     </form>
-                                    <form id="reset-form" action="{{ url_for('settings.reset_defaults') }}" method="post" style="display: none;"></form>
+                                    <form id="reset-form" action="{{ url_for('settings.reset_defaults') }}" method="post" style="display: none;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    </form>
                                 </div>
                                 
                                 <div class="col-md-4">
@@ -515,14 +521,35 @@
 
 {% block scripts %}
 {{ super() }}
+<!-- 添加Sortable.js库 -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
+    // 初始化拖动排序
+    var sortableList = document.getElementById('person-order-list');
+    if (sortableList) {
+        new Sortable(sortableList, {
+            handle: '.handle',
+            animation: 150,
+            ghostClass: 'bg-light',
+            onEnd: function() {
+                // 重新编号
+                $('#person-order-list tr').each(function(index) {
+                    $(this).find('.order-num').text(index + 1);
+                });
+            }
+        });
+    }
+    
     // 添加自定义责任人
     $('#add-person').click(function() {
         var rowCount = $('#person-order-list tr').length + 1;
         var newRow = `
-            <tr>
-                <td>${rowCount}</td>
+            <tr class="sortable-item" data-id="${rowCount}">
+                <td class="handle">
+                    <i class="fas fa-grip-vertical text-muted"></i>
+                    <span class="order-num">${rowCount}</span>
+                </td>
                 <td>
                     <input type="text" class="form-control form-control-sm" name="person_names[]" value="">
                 </td>
@@ -551,8 +578,11 @@ $(document).ready(function() {
         if (selectedUser) {
             var rowCount = $('#person-order-list tr').length + 1;
             var newRow = `
-                <tr class="${departmentClass}">
-                    <td>${rowCount}</td>
+                <tr class="${departmentClass} sortable-item" data-id="${rowCount}">
+                    <td class="handle">
+                        <i class="fas fa-grip-vertical text-muted"></i>
+                        <span class="order-num">${rowCount}</span>
+                    </td>
                     <td>
                         <input type="text" class="form-control form-control-sm" name="person_names[]" value="${selectedUser}">
                     </td>
@@ -582,7 +612,7 @@ $(document).ready(function() {
         $(this).closest('tr').remove();
         // 重新编号
         $('#person-order-list tr').each(function(index) {
-            $(this).find('td:first').text(index + 1);
+            $(this).find('.order-num').text(index + 1);
         });
     });
     
@@ -601,4 +631,18 @@ $(document).ready(function() {
     }
 });
 </script>
+
+<style>
+/* 拖动排序样式 */
+.sortable-list .handle {
+    cursor: move;
+}
+.sortable-list .handle i {
+    margin-right: 5px;
+}
+.sortable-ghost {
+    opacity: 0.5;
+    background-color: #f8f9fa !important;
+}
+</style>
 {% endblock %} 
