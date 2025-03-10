@@ -5,15 +5,18 @@ from flask_login import login_required, current_user
 from app.work_report import bp
 from app import db
 from app.models.work_report import WeeklyReport, MonthlyReport
+from app.decorators import module_permission_required
 
 @bp.route('/')
 @login_required
+@module_permission_required('report')
 def index():
     """工作汇报首页"""
     return render_template('work_report/index.html', title='工作汇报')
 
 @bp.route('/weekly')
 @login_required
+@module_permission_required('report')
 def weekly():
     """周报管理"""
     # 获取当前用户部门的所有周报
@@ -22,6 +25,7 @@ def weekly():
 
 @bp.route('/weekly/create', methods=['GET', 'POST'])
 @login_required
+@module_permission_required('report')
 def weekly_create():
     """创建周报"""
     if request.method == 'POST':
@@ -75,27 +79,77 @@ def weekly_create():
 
 @bp.route('/weekly/<int:report_id>/edit', methods=['GET'])
 @login_required
+@module_permission_required('report')
 def weekly_edit(report_id):
     """编辑周报"""
     report = WeeklyReport.query.get_or_404(report_id)
     
-    # 检查权限
-    if report.user_id != current_user.id and not current_user.is_admin:
-        flash('您没有权限编辑此周报')
-        return redirect(url_for('work_report.weekly'))
+    # 不再检查创建者，因为module_permission_required装饰器已经确保了只有有权限的用户才能访问
+    # 所有拥有report模块权限的用户都可以编辑任何周报
+    
+    # 打印加载时的工作项责任人顺序
+    print("编辑页面加载 - 重点工作责任人顺序:", [item['person'] for item in report.key_works])
+    
+    # 如果系统设置了责任人排序，则按照排序顺序对工作项进行排序
+    from app.models import Setting
+    
+    person_order = []
+    person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
+    if person_order_setting:
+        try:
+            person_order = json.loads(person_order_setting.value)
+            print("编辑页面 - 责任人排序设置:", person_order)
+            
+            if person_order:
+                # 构建排序字典
+                person_order_dict = {name: idx for idx, name in enumerate(person_order)}
+                max_order = len(person_order)
+                
+                # 按责任人排序工作项，使相同责任人的工作项相邻
+                # 排序前先获取原始数据
+                key_works = report.key_works
+                temp_works = report.temp_works
+                coordinations = report.coordinations
+                
+                # 打印排序前的工作项责任人顺序
+                print("编辑页面排序前 - 重点工作责任人顺序:", [item.get('person', '') for item in key_works])
+                
+                # 应用排序
+                key_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                temp_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                coordinations.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                
+                # 打印排序后的工作项责任人顺序
+                print("编辑页面排序后 - 重点工作责任人顺序:", [item.get('person', '') for item in key_works])
+                
+                # 更新排序后的数据到report对象
+                report._key_works = json.dumps(key_works)
+                report._temp_works = json.dumps(temp_works)
+                report._coordinations = json.dumps(coordinations)
+                
+                # 保存更新到数据库
+                db.session.commit()
+                
+                # 打印应用排序后的工作项责任人顺序
+                print("编辑页面应用排序后 - 重点工作责任人顺序:", [item.get('person', '') for item in report.key_works])
+            else:
+                print("编辑页面 - 责任人排序设置为空列表，不进行排序")
+        except Exception as e:
+            print(f"编辑页面排序工作项时出错: {e}")
+    else:
+        print("编辑页面 - 未找到责任人排序设置")
     
     return render_template('work_report/weekly_edit.html', title='编辑周报', report=report)
 
 @bp.route('/weekly/<int:report_id>/update', methods=['POST'])
 @login_required
+@module_permission_required('report')
 def weekly_update(report_id):
     """更新周报内容"""
     report = WeeklyReport.query.get_or_404(report_id)
     
-    # 检查权限
-    if report.user_id != current_user.id and not current_user.is_admin:
-        flash('您没有权限编辑此周报')
-        return redirect(url_for('work_report.weekly'))
+    # 不再检查创建者，因为module_permission_required装饰器已经确保了只有有权限的用户才能访问
+    # 所有拥有report模块权限的用户都可以编辑任何周报
     
     # 更新基本信息
     if request.form.get('meeting_time'):
@@ -178,18 +232,261 @@ def weekly_update(report_id):
                 'expected_date': coordination_expected_dates[i] if i < len(coordination_expected_dates) else ""
             })
     
+    # 打印排序前的工作项责任人顺序
+    print("排序前 - 重点工作责任人顺序:", [item['person'] for item in key_works])
+    
+    # 获取责任人排序设置
+    from app.models import Setting
+    person_order = []
+    person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
+    if person_order_setting:
+        try:
+            person_order = json.loads(person_order_setting.value)
+            print("责任人排序设置:", person_order)
+            
+            if person_order:
+                # 构建排序字典
+                person_order_dict = {name: idx for idx, name in enumerate(person_order)}
+                max_order = len(person_order)
+                
+                # 按责任人排序工作项
+                key_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                temp_works.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                coordinations.sort(key=lambda x: person_order_dict.get(x.get('person', ''), max_order))
+                
+                # 打印排序后的工作项责任人顺序
+                print("排序后 - 重点工作责任人顺序:", [item['person'] for item in key_works])
+            else:
+                print("责任人排序设置为空列表，不进行排序")
+        except Exception as e:
+            print(f"排序工作项时出错: {e}")
+    else:
+        print("未找到责任人排序设置")
+    
     # 更新报告
     report.key_works = key_works
     report.temp_works = temp_works
     report.coordinations = coordinations
     
     db.session.commit()
+    
+    # 检查保存后的数据
+    saved_report = WeeklyReport.query.get(report_id)
+    print("保存后 - 重点工作责任人顺序:", [item['person'] for item in saved_report.key_works])
+    
     flash('周报已保存')
     
     return redirect(url_for('work_report.weekly_edit', report_id=report.id))
 
 @bp.route('/monthly')
 @login_required
+@module_permission_required('report')
 def monthly():
     """月报管理"""
-    return render_template('work_report/monthly.html', title='月报管理') 
+    return render_template('work_report/monthly.html', title='月报管理')
+
+@bp.route('/settings', methods=['GET'])
+@login_required
+@module_permission_required('report')
+def settings():
+    """工作汇报设置页面"""
+    # 读取当前设置
+    from app.models import User, Setting
+    
+    # 获取工作汇报相关设置
+    settings = {}
+    db_settings = Setting.query.filter(Setting.key.like('work_report_%')).all()
+    for setting in db_settings:
+        settings[setting.key.replace('work_report_', '')] = setting.value
+    
+    # 获取责任人排序列表
+    person_order = []
+    person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
+    if person_order_setting:
+        try:
+            person_order = json.loads(person_order_setting.value)
+        except:
+            person_order = []
+    
+    # 如果没有责任人排序设置，自动创建一个默认的排序列表
+    if not person_order:
+        # 获取所有用户
+        all_users = User.query.all()
+        
+        # 区分行政部和非行政部用户
+        admin_users = []
+        other_users = []
+        for user in all_users:
+            if user.name:  # 只考虑有名字的用户
+                if user.department == '行政部':
+                    admin_users.append(user)
+                else:
+                    other_users.append(user)
+        
+        # 行政部用户按名字排序
+        admin_users.sort(key=lambda x: x.name)
+        
+        # 非行政部用户按名字排序
+        other_users.sort(key=lambda x: x.name)
+        
+        # 行政部用户排在前面，其他用户排在后面
+        person_order = [user.name for user in admin_users] + [user.name for user in other_users]
+        
+        # 保存默认设置
+        if person_order:
+            if not person_order_setting:
+                person_order_setting = Setting(
+                    key='work_report_person_order',
+                    value=json.dumps(person_order),
+                    description='周报责任人排序设置'
+                )
+                db.session.add(person_order_setting)
+            else:
+                person_order_setting.value = json.dumps(person_order)
+            
+            db.session.commit()
+            flash('已创建默认责任人排序设置')
+    
+    # 为界面准备数据
+    # 获取所有用户列表，用于添加责任人
+    all_users = User.query.all()
+    
+    # 分类用户
+    admin_users = []
+    other_users = []
+    for user in all_users:
+        if user.name:  # 只考虑有名字的用户
+            if user.department == '行政部':
+                admin_users.append(user.name)
+            else:
+                other_users.append(user.name)
+                
+    # 获取已不存在的用户（可能在列表中但已从系统中删除）
+    existing_users = set([u.name for u in all_users if u.name])
+    nonexistent_users = [name for name in person_order if name not in existing_users]
+    
+    return render_template('work_report/settings.html', 
+                          title='工作汇报设置',
+                          settings=settings,
+                          person_order=person_order,
+                          admin_users=admin_users,
+                          other_users=other_users,
+                          nonexistent_users=nonexistent_users)
+
+@bp.route('/settings/template', methods=['POST'])
+@login_required
+@module_permission_required('report')
+def update_template_settings():
+    """更新工作汇报模板设置"""
+    if request.method == 'POST':
+        from app.models import Setting
+        
+        # 周报模板
+        weekly_template = request.form.get('weekly_template', '')
+        weekly_setting = Setting.query.filter_by(key='work_report_weekly_template').first()
+        if not weekly_setting:
+            weekly_setting = Setting(key='work_report_weekly_template', value=weekly_template)
+            db.session.add(weekly_setting)
+        else:
+            weekly_setting.value = weekly_template
+        
+        # 月报模板
+        monthly_template = request.form.get('monthly_template', '')
+        monthly_setting = Setting.query.filter_by(key='work_report_monthly_template').first()
+        if not monthly_setting:
+            monthly_setting = Setting(key='work_report_monthly_template', value=monthly_template)
+            db.session.add(monthly_setting)
+        else:
+            monthly_setting.value = monthly_template
+        
+        db.session.commit()
+        flash('模板设置已更新')
+        
+    return redirect(url_for('work_report.settings'))
+
+@bp.route('/settings/reminder', methods=['POST'])
+@login_required
+@module_permission_required('report')
+def update_reminder_settings():
+    """更新工作汇报提醒设置"""
+    if request.method == 'POST':
+        from app.models import Setting
+        
+        # 周报提醒
+        enable_weekly = 'enable_weekly_reminder' in request.form
+        weekly_setting = Setting.query.filter_by(key='work_report_enable_weekly_reminder').first()
+        if not weekly_setting:
+            weekly_setting = Setting(key='work_report_enable_weekly_reminder', value=str(enable_weekly))
+            db.session.add(weekly_setting)
+        else:
+            weekly_setting.value = str(enable_weekly)
+        
+        # 月报提醒
+        enable_monthly = 'enable_monthly_reminder' in request.form
+        monthly_setting = Setting.query.filter_by(key='work_report_enable_monthly_reminder').first()
+        if not monthly_setting:
+            monthly_setting = Setting(key='work_report_enable_monthly_reminder', value=str(enable_monthly))
+            db.session.add(monthly_setting)
+        else:
+            monthly_setting.value = str(enable_monthly)
+        
+        db.session.commit()
+        flash('提醒设置已更新')
+        
+    return redirect(url_for('work_report.settings'))
+
+@bp.route('/settings/person_order', methods=['POST'])
+@login_required
+@module_permission_required('report')
+def update_person_order():
+    """更新责任人排序设置"""
+    # 不再检查用户部门
+    # 任何有report模块权限的用户都可以修改责任人排序设置
+    
+    if request.method == 'POST':
+        from app.models import Setting, User
+        
+        # 获取表单中的责任人顺序
+        person_names = request.form.getlist('person_names[]')
+        person_names = [name.strip() for name in person_names if name.strip()]
+        
+        # 如果没有提交任何责任人，则自动创建排序
+        if not person_names:
+            # 获取所有用户
+            all_users = User.query.all()
+            
+            # 区分行政部和非行政部用户
+            admin_users = []
+            other_users = []
+            for user in all_users:
+                if user.name:  # 只考虑有名字的用户
+                    if user.department == '行政部':
+                        admin_users.append(user)
+                    else:
+                        other_users.append(user)
+            
+            # 行政部用户按名字排序
+            admin_users.sort(key=lambda x: x.name)
+            
+            # 非行政部用户按名字排序
+            other_users.sort(key=lambda x: x.name)
+            
+            # 行政部用户排在前面，其他用户排在后面
+            person_names = [user.name for user in admin_users] + [user.name for user in other_users]
+        
+        # 保存设置
+        person_order_setting = Setting.query.filter_by(key='work_report_person_order').first()
+        if not person_order_setting:
+            person_order_setting = Setting(
+                key='work_report_person_order',
+                value=json.dumps(person_names),
+                description='周报责任人排序设置'
+            )
+            db.session.add(person_order_setting)
+        else:
+            person_order_setting.value = json.dumps(person_names)
+        
+        db.session.commit()
+        flash('责任人排序设置已更新')
+        
+    return redirect(url_for('work_report.settings')) 

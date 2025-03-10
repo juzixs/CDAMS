@@ -12,7 +12,7 @@ class PDFSettingsForm(FlaskForm):
         FileAllowed(['ttf', 'otf'], '只允许上传ttf或otf格式的字体文件')
     ])
     font_size = IntegerField('字体大小', validators=[DataRequired()])
-    font_bold = BooleanField('粗体')
+    use_default_font = BooleanField('使用默认字体')
     text_x = IntegerField('文字X坐标', validators=[DataRequired()])
     text_y = IntegerField('文字Y坐标', validators=[DataRequired()])
     text_color = StringField('文字颜色(RGB)', validators=[DataRequired()], 
