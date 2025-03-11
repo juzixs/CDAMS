@@ -17,13 +17,13 @@
             padding: 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #f8f9fa;
-            width: 250px;
+            width: 220px;
             transition: all 0.3s ease;
         }
 
         /* 侧边栏收缩状态 */
         .sidebar.collapsed {
-            width: 60px;
+            width: 50px;
             overflow: visible;
         }
 
@@ -37,24 +37,88 @@
 
         /* 收缩状态下的图标样式 */
         .sidebar.collapsed .nav-link {
-            padding: 12px 0;
+            padding: 14px 0;
             text-align: center;
             position: relative;
             white-space: nowrap;
+            height: 48px;
         }
 
         .sidebar.collapsed .nav-link i:not(.fa-chevron-down) {
             margin: 0 !important;
             width: 100%;
-            font-size: 1.25rem;
+            font-size: 1.2rem;
             text-align: center;
         }
 
-        /* 收缩状态下的悬浮提示 */
-        .sidebar.collapsed .nav-link:after {
+        /* 有子菜单的菜单项样式 */
+        .sidebar .nav-link[data-menu-toggle="collapse"] {
+            position: relative;
+        }
+
+        .sidebar .nav-link[data-menu-toggle="collapse"]:after {
+            content: '';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background-color: #007bff;
+            opacity: 0.7;
+        }
+
+        /* 移除原有的展开图标样式 */
+        .sidebar .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down,
+        .sidebar .nav-link[aria-expanded="true"] i.fa-chevron-down,
+        .sidebar.collapsed .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down,
+        .sidebar .nav-link[data-menu-toggle="collapse"] i.fa-chevron-down {
+            display: none !important;
+        }
+
+        /* 子菜单展开状态样式调整 */
+        .sidebar .nav-link[aria-expanded="true"]:after {
+            opacity: 1;
+            background-color: #007bff;
+        }
+
+        /* 收缩状态下的子菜单样式 */
+        .sidebar.collapsed .collapse {
+            position: fixed;
+            left: 50px;
+            width: 46px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 0 4px 4px 0;
+            display: none;
+            border: 1px solid #e9ecef;
+            z-index: 1200;
+            margin-top: 0;
+            padding: 6px 0;
+        }
+
+        /* 收缩状态下的子菜单项样式 */
+        .sidebar.collapsed .collapse .nav-link {
+            padding: 10px 0;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar.collapsed .collapse .nav-link i {
+            margin: 0 !important;
+            width: 100%;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+
+        /* 收缩状态下的子菜单悬停提示 */
+        .sidebar.collapsed .collapse .nav-link:after {
             content: attr(data-title);
             position: fixed;
-            left: 70px;
+            left: 140px;
             background: rgba(0, 0, 0, 0.8);
             color: white;
             padding: 6px 12px;
@@ -69,51 +133,24 @@
             transition: all 0.2s ease;
         }
 
-        .sidebar.collapsed .nav-link:hover:after {
+        .sidebar.collapsed .collapse .nav-link:hover:after {
             opacity: 1;
             visibility: visible;
         }
 
-        /* 确保提示框在子菜单之上 */
-        .sidebar.collapsed .nav-link:not([data-menu-toggle="collapse"]):hover:after {
-            z-index: 1300;
+        /* 子菜单项激活状态 */
+        .sidebar.collapsed .collapse .nav-link.active {
+            background-color: #e9ecef;
         }
 
-        /* 调整子菜单项的提示位置 */
-        .sidebar.collapsed .collapse .nav-link:after {
-            left: 270px;
+        .sidebar.collapsed .collapse .nav-link.active i {
+            color: #007bff;
         }
 
-        /* 优化图标大小和间距 */
-        .sidebar.collapsed .nav-link i:not(.fa-chevron-down) {
-            margin: 0 !important;
-            width: 100%;
-            font-size: 1.25rem;
-            text-align: center;
-            line-height: 1.5;
-        }
-
-        /* 优化图标容器的内边距 */
-        .sidebar.collapsed .nav-link {
-            padding: 12px 0;
-            height: 48px;
+        /* 确保子菜单项的图标垂直居中 */
+        .sidebar.collapsed .collapse .nav-link {
             display: flex;
             align-items: center;
-            justify-content: center;
-        }
-
-        /* 收缩状态下的子菜单样式 */
-        .sidebar.collapsed .collapse {
-            position: fixed;
-            left: 60px;
-            width: 200px;
-            background: #fff;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            border-radius: 0 4px 4px 0;
-            display: none;
-            border: 1px solid #e9ecef;
-            z-index: 1200;
-            margin-top: 0;
         }
 
         /* 收缩状态下的子菜单项容器 */
@@ -165,28 +202,6 @@
 
         .sidebar.collapsed .sidebar-toggle i {
             transform: rotate(180deg);
-        }
-
-        /* 子菜单展开图标样式 */
-        .sidebar .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down {
-            transition: all 0.3s ease;
-            font-size: 0.75rem;
-            opacity: 0.7;
-            margin-left: 4px;
-            position: absolute;
-            right: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-
-        .sidebar .nav-link[aria-expanded="true"] i.fa-chevron-down {
-            transform: translateY(-50%) rotate(180deg);
-            opacity: 1;
-            color: #007bff;
-        }
-
-        .sidebar.collapsed .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down {
-            display: none;
         }
 
         /* 响应式侧边栏 */
@@ -299,16 +314,16 @@
 
         /* 内容区域样式 */
         .main-content {
-            margin-left: 250px;
+            margin-left: 220px;
             padding: 60px 30px 20px;
             min-height: 100vh;
-            width: calc(100% - 250px);
+            width: calc(100% - 220px);
             transition: all 0.3s ease;
         }
 
         .sidebar.collapsed ~ .main-content {
-            margin-left: 60px;
-            width: calc(100% - 60px);
+            margin-left: 50px;
+            width: calc(100% - 50px);
         }
         .nav-link {
             color: #333;
@@ -513,7 +528,6 @@
                        aria-controls="vehicleSubmenu"
                        data-title="车辆管理">
                         <i class="fas fa-car"></i> <span>车辆管理</span>
-                        <i class="fas fa-chevron-down float-end mt-1"></i>
                     </a>
                     <div class="collapse {% if request.endpoint.startswith('vehicle') or request.endpoint.startswith('license_plate') %}show{% endif %}" id="vehicleSubmenu">
                         <ul class="nav flex-column ms-3">
@@ -693,9 +707,9 @@
                 $submenu.css({
                     'position': 'fixed',
                     'top': menuItemTop,
-                    'left': '60px',
+                    'left': '50px',
                     'display': 'block',
-                    'width': '200px',
+                    'width': '220px',
                     'z-index': '1200'
                 });
             } else {
