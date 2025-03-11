@@ -7,30 +7,224 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <style>
+        /* 侧边栏基础样式 */
         .sidebar {
             position: fixed;
-            top: 0;
+            top: 60px;
             bottom: 0;
             left: 0;
             z-index: 100;
-            padding: 48px 0 0;
+            padding: 0;
             box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
             background-color: #f8f9fa;
-            width: 250px;  /* 固定侧边栏宽度 */
+            width: 250px;
+            transition: all 0.3s ease;
         }
+
+        /* 侧边栏收缩状态 */
+        .sidebar.collapsed {
+            width: 60px;
+            overflow: visible;
+        }
+
+        /* 收缩状态下隐藏所有文本 */
+        .sidebar.collapsed .nav-link span,
+        .sidebar.collapsed .sidebar-heading,
+        .sidebar.collapsed .nav-link[data-bs-toggle="collapse"]::after,
+        .sidebar.collapsed h6 {
+            display: none !important;
+        }
+
+        /* 收缩状态下的图标样式 */
+        .sidebar.collapsed .nav-link {
+            padding: 12px 0;
+            text-align: center;
+            position: relative;
+            white-space: nowrap;
+        }
+
+        .sidebar.collapsed .nav-link i:not(.fa-chevron-down) {
+            margin: 0 !important;
+            width: 100%;
+            font-size: 1.25rem;
+            text-align: center;
+        }
+
+        /* 收缩状态下的悬浮提示 */
+        .sidebar.collapsed .nav-link:after {
+            content: attr(data-title);
+            position: fixed;
+            left: 70px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 13px;
+            white-space: nowrap;
+            z-index: 1300;
+            pointer-events: none;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-50%);
+            transition: all 0.2s ease;
+        }
+
+        .sidebar.collapsed .nav-link:hover:after {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* 确保提示框在子菜单之上 */
+        .sidebar.collapsed .nav-link:not([data-menu-toggle="collapse"]):hover:after {
+            z-index: 1300;
+        }
+
+        /* 调整子菜单项的提示位置 */
+        .sidebar.collapsed .collapse .nav-link:after {
+            left: 270px;
+        }
+
+        /* 优化图标大小和间距 */
+        .sidebar.collapsed .nav-link i:not(.fa-chevron-down) {
+            margin: 0 !important;
+            width: 100%;
+            font-size: 1.25rem;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* 优化图标容器的内边距 */
+        .sidebar.collapsed .nav-link {
+            padding: 12px 0;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 收缩状态下的子菜单样式 */
+        .sidebar.collapsed .collapse {
+            position: fixed;
+            left: 60px;
+            width: 200px;
+            background: #fff;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-radius: 0 4px 4px 0;
+            display: none;
+            border: 1px solid #e9ecef;
+            z-index: 1200;
+            margin-top: 0;
+        }
+
+        /* 收缩状态下的子菜单项容器 */
+        .sidebar.collapsed .menu-spacer {
+            display: none;
+        }
+
+        /* 收缩状态下图标激活状态 */
+        .sidebar.collapsed .nav-link.submenu-active {
+            background-color: #e9ecef;
+            color: #007bff;
+        }
+
+        .sidebar.collapsed .nav-link.submenu-active i {
+            color: #007bff;
+        }
+
+        /* 清除悬停时显示子菜单的默认行为 */
+        .sidebar.collapsed .nav-item:hover > .collapse {
+            display: none !important;
+        }
+
+        /* 切换按钮样式 */
+        .sidebar-toggle {
+            position: absolute;
+            right: -12px;
+            top: 10px;
+            z-index: 101;
+            width: 24px;
+            height: 24px;
+            background-color: #fff;
+            border: 1px solid #e9ecef;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+            color: #6c757d;
+        }
+
+        .sidebar-toggle:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.1);
+            color: #007bff;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+        }
+
+        .sidebar.collapsed .sidebar-toggle i {
+            transform: rotate(180deg);
+        }
+
+        /* 子菜单展开图标样式 */
+        .sidebar .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down {
+            transition: all 0.3s ease;
+            font-size: 0.75rem;
+            opacity: 0.7;
+            margin-left: 4px;
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .sidebar .nav-link[aria-expanded="true"] i.fa-chevron-down {
+            transform: translateY(-50%) rotate(180deg);
+            opacity: 1;
+            color: #007bff;
+        }
+
+        .sidebar.collapsed .nav-link[data-bs-toggle="collapse"] i.fa-chevron-down {
+            display: none;
+        }
+
+        /* 响应式侧边栏 */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0 !important;
+                width: 100% !important;
+            }
+
+            .sidebar-toggle {
+                display: none;
+            }
+        }
+
         .sidebar-sticky {
             position: relative;
             top: 0;
-            height: calc(100vh - 48px);
+            height: 100%;
             padding-top: .5rem;
             overflow-x: hidden;
             overflow-y: auto;
         }
+
+        /* 导航栏样式 */
         .navbar {
             background: linear-gradient(135deg, #1e88e5 0%, #1565c0 100%) !important;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             padding: 0.5rem 1rem;
             height: 60px;
+            z-index: 1030;
         }
         .navbar-brand {
             font-size: 1.4rem;
@@ -87,11 +281,34 @@
             font-size: 1.2rem;
             margin-right: 8px;
         }
+        /* 遮罩层样式 */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 60px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 99;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
+        }
+
+        /* 内容区域样式 */
         .main-content {
-            margin-left: 250px;  /* 与侧边栏宽度相同 */
-            padding: 60px 30px 20px;  /* 调整内容区域的内边距 */
-            min-height: 100vh;  /* 确保内容区域至少占满整个视口高度 */
-            width: calc(100% - 250px);  /* 确保内容区域不会超出右边界 */
+            margin-left: 250px;
+            padding: 60px 30px 20px;
+            min-height: 100vh;
+            width: calc(100% - 250px);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar.collapsed ~ .main-content {
+            margin-left: 60px;
+            width: calc(100% - 60px);
         }
         .nav-link {
             color: #333;
@@ -133,18 +350,34 @@
         .sidebar .collapse {
             background-color: rgba(0, 0, 0, 0.03);
         }
+        /* 子菜单展开状态 */
+        .sidebar .nav-link.menu-expanded i.fa-chevron-down {
+            transform: translateY(-50%) rotate(180deg);
+            opacity: 1;
+            color: #007bff;
+        }
+        
+        /* 自定义子菜单样式 */
+        .sidebar .nav-link.has-submenu {
+            position: relative;
+        }
+        
+        .sidebar .is-expanded {
+            display: block;
+        }
     </style>
+    {% block styles %}{% endblock %}
 </head>
 <body>
     <!-- 顶部导航栏 -->
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
         <div class="container-fluid">
+            <button class="navbar-toggler border-0 px-2" type="button">
+                <span class="navbar-toggler-icon"></span>
+            </button>
             <a class="navbar-brand" href="{{ url_for('index') }}">
                 <i class="fas fa-building"></i>行政管理系统
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <!-- 左侧导航项 -->
@@ -195,55 +428,77 @@
         </div>
     </nav>
 
+    <!-- 遮罩层 -->
+    <div class="sidebar-overlay"></div>
+
     <!-- 左侧导航栏 -->
     {% if current_user.is_authenticated %}
-    <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+    <nav class="sidebar">
         <div class="sidebar-sticky">
             <ul class="nav flex-column">
+                <!-- 侧边栏切换按钮 -->
+                <li class="nav-item position-relative">
+                    <button class="sidebar-toggle" id="sidebarToggle" title="展开/收起侧边栏">
+                        <i class="fas fa-angle-left"></i>
+                    </button>
+                </li>
+
                 <!-- 普通级模块：所有用户可见 -->
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('ticket') %}active{% endif %}" href="{{ url_for('ticket.index') }}">
-                        <i class="fas fa-ticket-alt"></i> 工单系统
+                    <a class="nav-link {% if request.endpoint.startswith('ticket') %}active{% endif %}" 
+                       href="{{ url_for('ticket.index') }}"
+                       data-title="工单系统">
+                        <i class="fas fa-ticket-alt"></i> <span>工单系统</span>
                     </a>
                 </li>
                 
                 <!-- 授权级模块：需要授权才可见 -->
                 {% if current_user.has_module_permission('report') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('work_report') %}active{% endif %}" href="{{ url_for('work_report.index') }}">
-                        <i class="fas fa-file-alt"></i> 工作汇报
+                    <a class="nav-link {% if request.endpoint.startswith('work_report') %}active{% endif %}" 
+                       href="{{ url_for('work_report.index') }}"
+                       data-title="工作汇报">
+                        <i class="fas fa-file-alt"></i> <span>工作汇报</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('budget') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('budget') %}active{% endif %}" href="#">
-                        <i class="fas fa-coins"></i> 预算管理
+                    <a class="nav-link {% if request.endpoint.startswith('budget') %}active{% endif %}" 
+                       href="#"
+                       data-title="预算管理">
+                        <i class="fas fa-coins"></i> <span>预算管理</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('asset') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('asset') %}active{% endif %}" href="#">
-                        <i class="fas fa-box"></i> 固定资产
+                    <a class="nav-link {% if request.endpoint.startswith('asset') %}active{% endif %}" 
+                       href="#"
+                       data-title="固定资产">
+                        <i class="fas fa-box"></i> <span>固定资产</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('office_supply') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('office') %}active{% endif %}" href="#">
-                        <i class="fas fa-pencil-alt"></i> 办公用品
+                    <a class="nav-link {% if request.endpoint.startswith('office') %}active{% endif %}" 
+                       href="#"
+                       data-title="办公用品">
+                        <i class="fas fa-pencil-alt"></i> <span>办公用品</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('beverage') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('beverage') %}active{% endif %}" href="#">
-                        <i class="fas fa-wine-bottle"></i> 酒水管理
+                    <a class="nav-link {% if request.endpoint.startswith('beverage') %}active{% endif %}" 
+                       href="#"
+                       data-title="酒水管理">
+                        <i class="fas fa-wine-bottle"></i> <span>酒水管理</span>
                     </a>
                 </li>
                 {% endif %}
@@ -255,22 +510,25 @@
                        href="#vehicleSubmenu" 
                        role="button" 
                        aria-expanded="{% if request.endpoint.startswith('vehicle') or request.endpoint.startswith('license_plate') %}true{% else %}false{% endif %}" 
-                       aria-controls="vehicleSubmenu">
-                        <i class="fas fa-car"></i> 车辆管理
+                       aria-controls="vehicleSubmenu"
+                       data-title="车辆管理">
+                        <i class="fas fa-car"></i> <span>车辆管理</span>
                         <i class="fas fa-chevron-down float-end mt-1"></i>
                     </a>
                     <div class="collapse {% if request.endpoint.startswith('vehicle') or request.endpoint.startswith('license_plate') %}show{% endif %}" id="vehicleSubmenu">
                         <ul class="nav flex-column ms-3">
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'official_car.index' %}active{% endif %}" 
-                                   href="{{ url_for('official_car.index') }}">
-                                    <i class="fas fa-car"></i> 公务车辆
+                                   href="{{ url_for('official_car.index') }}"
+                                   data-title="公务车辆">
+                                    <i class="fas fa-car"></i> <span>公务车辆</span>
                                 </a>
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'license_plate.index' %}active{% endif %}" 
-                                   href="{{ url_for('license_plate.index') }}">
-                                    <i class="fas fa-id-card"></i> 车辆通行证
+                                   href="{{ url_for('license_plate.index') }}"
+                                   data-title="车辆通行证">
+                                    <i class="fas fa-id-card"></i> <span>车辆通行证</span>
                                 </a>
                             </li>
                         </ul>
@@ -280,16 +538,20 @@
                 
                 {% if current_user.has_module_permission('dormitory') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('dormitory') %}active{% endif %}" href="{{ url_for('dormitory.index') }}">
-                        <i class="fas fa-bed"></i> 宿舍管理
+                    <a class="nav-link {% if request.endpoint.startswith('dormitory') %}active{% endif %}" 
+                       href="{{ url_for('dormitory.index') }}"
+                       data-title="宿舍管理">
+                        <i class="fas fa-bed"></i> <span>宿舍管理</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('cafeteria') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('canteen') %}active{% endif %}" href="#">
-                        <i class="fas fa-utensils"></i> 食堂管理
+                    <a class="nav-link {% if request.endpoint.startswith('canteen') %}active{% endif %}" 
+                       href="#"
+                       data-title="食堂管理">
+                        <i class="fas fa-utensils"></i> <span>食堂管理</span>
                     </a>
                 </li>
                 {% endif %}
@@ -297,16 +559,20 @@
                 <!-- 管理级模块：仅管理员可见 -->
                 {% if current_user.has_module_permission('user') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('user') and request.endpoint != 'user.profile' and request.endpoint != 'user.password' %}active{% endif %}" href="{{ url_for('user.users') }}">
-                        <i class="fas fa-users"></i> 用户管理
+                    <a class="nav-link {% if request.endpoint.startswith('user') and request.endpoint != 'user.profile' and request.endpoint != 'user.password' %}active{% endif %}" 
+                       href="{{ url_for('user.users') }}"
+                       data-title="用户管理">
+                        <i class="fas fa-users"></i> <span>用户管理</span>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% if current_user.has_module_permission('settings') %}
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint.startswith('settings') %}active{% endif %}" href="{{ url_for('settings.index') }}">
-                        <i class="fas fa-cog"></i> 系统设置
+                    <a class="nav-link {% if request.endpoint.startswith('settings') %}active{% endif %}" 
+                       href="{{ url_for('settings.index') }}"
+                       data-title="系统设置">
+                        <i class="fas fa-cog"></i> <span>系统设置</span>
                     </a>
                 </li>
                 {% endif %}
@@ -317,13 +583,17 @@
             </h6>
             <ul class="nav flex-column mb-2">
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'user.profile' %}active{% endif %}" href="{{ url_for('user.profile') }}">
-                        <i class="fas fa-user-cog"></i> 个人资料
+                    <a class="nav-link {% if request.endpoint == 'user.profile' %}active{% endif %}" 
+                       href="{{ url_for('user.profile') }}"
+                       data-title="个人资料">
+                        <i class="fas fa-user-cog"></i> <span>个人资料</span>
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'user.password' %}active{% endif %}" href="{{ url_for('user.password') }}">
-                        <i class="fas fa-key"></i> 修改密码
+                    <a class="nav-link {% if request.endpoint == 'user.password' %}active{% endif %}" 
+                       href="{{ url_for('user.password') }}"
+                       data-title="修改密码">
+                        <i class="fas fa-key"></i> <span>修改密码</span>
                     </a>
                 </li>
             </ul>
@@ -332,14 +602,14 @@
     {% endif %}
 
     <!-- 主要内容区域 -->
-    <main class="{% if current_user.is_authenticated %}main-content{% else %}container mt-5{% endif %}">
+    <main class="main-content">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
@@ -347,24 +617,260 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- JavaScript 库 -->
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- 自定义脚本 -->
     <script>
-        // 侧边栏切换
-        document.addEventListener('DOMContentLoaded', function() {
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    document.body.classList.toggle('sidebar-toggled');
-                    document.querySelector('.sidebar').classList.toggle('toggled');
+    $(document).ready(function() {
+        // 保存侧边栏状态到 localStorage
+        function saveSidebarState(isCollapsed) {
+            localStorage.setItem('sidebarCollapsed', isCollapsed);
+        }
+
+        // 从 localStorage 读取侧边栏状态
+        function loadSidebarState() {
+            return localStorage.getItem('sidebarCollapsed') === 'true';
+        }
+
+        // 初始化菜单提示文字
+        function initMenuTitles() {
+            $('.sidebar .nav-link').each(function() {
+                var title = $(this).find('span').text().trim();
+                if (title) {
+                    $(this).attr('data-title', title);
+                }
+            });
+        }
+        
+        // 初始化侧边栏状态
+        function initSidebar() {
+            if (loadSidebarState()) {
+                $('.sidebar').addClass('collapsed');
+            }
+            
+            // 移除Bootstrap的collapse相关属性和事件
+            $('.sidebar .nav-link[data-bs-toggle="collapse"]').each(function() {
+                $(this).removeAttr('data-bs-toggle');
+                $(this).attr('data-menu-toggle', 'collapse');
+            });
+            
+            // 确保正确的初始展开状态
+            $('.sidebar .collapse').each(function() {
+                if ($(this).hasClass('show')) {
+                    $(this).attr('data-expanded', 'true');
+                    var id = '#' + $(this).attr('id');
+                    var $link = $('a[href="' + id + '"]');
+                    $link.attr('aria-expanded', 'true');
+                }
+                $(this).removeClass('show');
+            });
+
+            // 添加空间容器用于收起状态下的子菜单
+            $('.sidebar .nav-item:has([data-menu-toggle="collapse"])').each(function() {
+                var $menuItem = $(this);
+                if (!$menuItem.next('.menu-spacer').length) {
+                    $menuItem.after('<li class="menu-spacer nav-item"></li>');
+                }
+            });
+        }
+        
+        // 初始化
+        initMenuTitles();
+        initSidebar();
+        
+        // 菜单子菜单状态
+        var submenuOpen = false;
+        var openSubmenuId = null;
+        
+        // 显示子菜单
+        function showSubmenu(id) {
+            var $submenu = $(id);
+            var $link = $('a[href="' + id + '"]');
+            var $menuItem = $link.closest('.nav-item');
+            
+            // 设置子菜单位置 - 在收起状态下显示在菜单项右侧
+            if ($('.sidebar').hasClass('collapsed')) {
+                var menuItemTop = $menuItem.offset().top - $(window).scrollTop();
+                $submenu.css({
+                    'position': 'fixed',
+                    'top': menuItemTop,
+                    'left': '60px',
+                    'display': 'block',
+                    'width': '200px',
+                    'z-index': '1200'
+                });
+            } else {
+                // 展开状态下的显示
+                $submenu.css({
+                    'position': 'static',
+                    'top': 'auto',
+                    'left': 'auto',
+                    'display': 'block',
+                    'width': 'auto'
+                }).slideDown(200);
+            }
+            
+            // 记录状态
+            submenuOpen = true;
+            openSubmenuId = id;
+            
+            // 添加激活状态
+            $link.addClass('submenu-active');
+        }
+        
+        // 隐藏子菜单
+        function hideSubmenu() {
+            if (openSubmenuId) {
+                var $submenu = $(openSubmenuId);
+                var $link = $('a[href="' + openSubmenuId + '"]');
+                
+                if ($('.sidebar').hasClass('collapsed')) {
+                    $submenu.hide();
+                } else {
+                    $submenu.slideUp(200);
+                }
+            }
+            
+            $('.sidebar .nav-link').removeClass('submenu-active');
+            submenuOpen = false;
+            openSubmenuId = null;
+        }
+        
+        // 处理侧边栏展开状态下的菜单交互
+        function handleExpandedMenu(e) {
+            var $link = $(e.currentTarget);
+            var target = $link.attr('href');
+            var $submenu = $(target);
+            var isExpanded = $submenu.attr('data-expanded') === 'true';
+            
+            // 切换子菜单展开状态
+            if (isExpanded) {
+                $submenu.slideUp(200).attr('data-expanded', 'false');
+                $link.attr('aria-expanded', 'false');
+            } else {
+                $submenu.slideDown(200).attr('data-expanded', 'true');
+                $link.attr('aria-expanded', 'true');
+            }
+        }
+        
+        // 处理侧边栏收起状态下的菜单交互
+        function handleCollapsedMenu(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            var $link = $(e.currentTarget);
+            var target = $link.attr('href');
+            
+            if (submenuOpen && openSubmenuId === target) {
+                // 如果点击的是当前打开的菜单，则关闭
+                hideSubmenu();
+            } else {
+                // 否则显示子菜单
+                hideSubmenu(); // 先隐藏其他打开的子菜单
+                showSubmenu(target);
+            }
+        }
+        
+        // 绑定菜单交互事件
+        $('.sidebar').on('click', '[data-menu-toggle="collapse"]', function(e) {
+            if ($('.sidebar').hasClass('collapsed')) {
+                handleCollapsedMenu(e);
+            } else {
+                handleExpandedMenu(e);
+            }
+        });
+        
+        // 侧边栏切换按钮点击事件
+        $('#sidebarToggle').on('click', function() {
+            // 隐藏所有子菜单
+            hideSubmenu();
+            
+            // 切换侧边栏状态
+            $('.sidebar').toggleClass('collapsed');
+            var isCollapsed = $('.sidebar').hasClass('collapsed');
+            saveSidebarState(isCollapsed);
+            
+            // 重置所有子菜单的样式
+            $('.sidebar .collapse').css({
+                'position': '',
+                'top': '',
+                'left': '',
+                'display': '',
+                'width': ''
+            });
+            
+            // 根据收起/展开状态显示相应的子菜单
+            if (!isCollapsed) {
+                // 恢复展开状态的子菜单
+                $('.sidebar .collapse[data-expanded="true"]').each(function() {
+                    $(this).css({
+                        'position': 'static',
+                        'top': 'auto',
+                        'left': 'auto',
+                        'display': 'block',
+                        'width': 'auto'
+                    });
                 });
             }
         });
+        
+        // 子菜单链接点击阻止冒泡
+        $('.sidebar').on('click', '.collapse .nav-link', function(e) {
+            e.stopPropagation();
+        });
+        
+        // 点击页面其他区域时关闭子菜单
+        $(document).on('click', function(e) {
+            if ($('.sidebar').hasClass('collapsed') && submenuOpen) {
+                // 如果点击的不是侧边栏内的元素，则关闭子菜单
+                if (!$(e.target).closest('.sidebar').length) {
+                    hideSubmenu();
+                }
+            }
+        });
+        
+        // 滚动时更新子菜单位置
+        $(window).on('scroll', function() {
+            if (submenuOpen && $('.sidebar').hasClass('collapsed')) {
+                var $link = $('a[href="' + openSubmenuId + '"]');
+                var $menuItem = $link.closest('.nav-item');
+                var $submenu = $(openSubmenuId);
+                var menuItemTop = $menuItem.offset().top - $(window).scrollTop();
+                
+                $submenu.css('top', menuItemTop);
+            }
+        });
+
+        // 移动端侧边栏切换功能
+        $('.navbar-toggler').click(function(e) {
+            e.preventDefault();
+            $('.sidebar').toggleClass('show');
+            $('.sidebar-overlay').toggleClass('show');
+        });
+        
+        // 点击遮罩层关闭侧边栏
+        $('.sidebar-overlay').click(function() {
+            $('.sidebar').removeClass('show');
+            $('.sidebar-overlay').removeClass('show');
+        });
+        
+        // 窗口大小改变时处理侧边栏状态
+        $(window).resize(function() {
+            if (window.innerWidth > 768) {
+                $('.sidebar').removeClass('show');
+                $('.sidebar-overlay').removeClass('show');
+            }
+            
+            // 如果在收起状态下且有子菜单打开，更新位置
+            if ($('.sidebar').hasClass('collapsed') && submenuOpen) {
+                var $link = $('a[href="' + openSubmenuId + '"]');
+                var $menuItem = $link.closest('.nav-item');
+                var $submenu = $(openSubmenuId);
+                
+                $submenu.css('top', $menuItem.position().top + $menuItem.outerHeight());
+            }
+        });
+    });
     </script>
-    
     {% block scripts %}{% endblock %}
 </body>
 </html> 

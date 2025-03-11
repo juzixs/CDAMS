@@ -2,7 +2,60 @@
 
 {% block styles %}
 <style>
-    /* 响应式设计样式 */
+    /* 顶部导航栏响应式样式 */
+    @media (max-width: 992px) {
+        .navbar-brand {
+            font-size: 1.1rem;
+            padding: 0.5rem;
+        }
+        
+        .navbar-nav .nav-link {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        .navbar-toggler {
+            padding: 0.4rem;
+            font-size: 1rem;
+        }
+    }
+    
+    /* 左侧侧边栏响应式样式 */
+    @media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            top: 56px;
+            left: -250px;
+            width: 250px;
+            height: calc(100vh - 56px);
+            z-index: 1000;
+            background-color: #fff;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+        }
+        
+        .sidebar.show {
+            left: 0;
+        }
+        
+        .sidebar .nav-link {
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+        }
+        
+        .content-wrapper {
+            margin-left: 0 !important;
+            width: 100% !important;
+        }
+    }
+    
+    /* 原有的响应式设计样式 */
     @media (max-width: 992px) {
         .nav-tabs {
             flex-wrap: wrap;
@@ -65,6 +118,36 @@
         .form-control, .form-select {
             font-size: 0.9rem;
         }
+        
+        /* 小屏幕下的导航栏优化 */
+        .navbar-brand {
+            font-size: 1rem;
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .navbar-toggler {
+            padding: 0.3rem;
+            font-size: 0.9rem;
+        }
+    }
+    
+    /* 添加暗色遮罩，当侧边栏显示时覆盖内容区域 */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 56px;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0,0,0,0.5);
+        z-index: 999;
+    }
+    
+    .sidebar-overlay.show {
+        display: block;
     }
 </style>
 {% endblock %}
@@ -598,6 +681,26 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
 $(document).ready(function() {
+    // 侧边栏切换功能
+    $('.navbar-toggler').click(function() {
+        $('.sidebar').toggleClass('show');
+        $('.sidebar-overlay').toggleClass('show');
+    });
+    
+    // 点击遮罩层关闭侧边栏
+    $('.sidebar-overlay').click(function() {
+        $('.sidebar').removeClass('show');
+        $('.sidebar-overlay').removeClass('show');
+    });
+    
+    // 窗口大小改变时处理侧边栏状态
+    $(window).resize(function() {
+        if (window.innerWidth > 768) {
+            $('.sidebar').removeClass('show');
+            $('.sidebar-overlay').removeClass('show');
+        }
+    });
+
     // 初始化拖动排序
     var sortableList = document.getElementById('person-order-list');
     if (sortableList) {
