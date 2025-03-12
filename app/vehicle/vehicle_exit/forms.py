@@ -58,7 +58,7 @@ class VehicleExitForm(FlaskForm):
     # 审批信息
     reviewer = StringField('审核人', validators=[Optional(), Length(max=50)])
     issuer = StringField('发放人', validators=[Optional(), Length(max=50)])
-    approver = StringField('审批人', validators=[Optional(), Length(max=50)])
+    approver_name = StringField('审批人', validators=[Optional(), Length(max=50)])
     guard = StringField('门卫', validators=[Optional(), Length(max=50)])
     
     # 备注

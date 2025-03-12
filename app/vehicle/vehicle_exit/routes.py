@@ -62,23 +62,55 @@ def add():
     
     if form.validate_on_submit():
         exit_record = VehicleExit(
+            # 基本信息
             exit_type=form.exit_type.data,
+            
+            # 申请信息
+            department=form.department.data,
+            initiator=form.initiator.data,
+            certificate_number=form.certificate_number.data,
+            
+            # 车辆和司机信息
             plate_number=form.plate_number.data,
             driver_name=form.driver_name.data,
             id_number=form.id_number.data,
             phone=form.phone.data,
+            
+            # 物流信息
+            vehicle_type=form.vehicle_type.data,
+            logistics_type=form.logistics_type.data,
+            logistics_company=form.logistics_company.data,
+            logistics_number=form.logistics_number.data,
+            
+            # 物品和目的地信息
             company=form.company.data,
+            item_category=form.item_category.data,
             destination=form.destination.data,
             items=form.items.data,
             purpose=form.purpose.data,
+            
+            # 时间信息
             exit_time=form.exit_time.data,
             expected_return_time=form.expected_return_time.data,
+            confirmed_exit_time=form.confirmed_exit_time.data,
+            
+            # 审批信息
+            reviewer=form.reviewer.data,
+            issuer=form.issuer.data,
+            guard=form.guard.data,
+            
+            # 其他信息
             remarks=form.remarks.data,
             created_by=current_user.id,
             status='pending'
         )
         
         db.session.add(exit_record)
+        
+        # 单独设置 approver_name 字段
+        if hasattr(exit_record, 'approver_name'):
+            exit_record.approver_name = form.approver_name.data
+        
         db.session.commit()
         
         flash(f'{"外协" if exit_type == "outsourcing" else "产成品"}车辆出门记录已添加', 'success')
@@ -96,30 +128,95 @@ def edit(id):
     form = VehicleExitForm()
     
     if request.method == 'GET':
+        # 基本信息
         form.exit_type.data = exit_record.exit_type
+        
+        # 申请信息
+        form.department.data = exit_record.department
+        form.initiator.data = exit_record.initiator
+        form.certificate_number.data = exit_record.certificate_number
+        
+        # 车辆和司机信息
         form.plate_number.data = exit_record.plate_number
         form.driver_name.data = exit_record.driver_name
         form.id_number.data = exit_record.id_number
         form.phone.data = exit_record.phone
+        
+        # 物流信息
+        form.vehicle_type.data = exit_record.vehicle_type
+        form.logistics_type.data = exit_record.logistics_type
+        form.logistics_company.data = exit_record.logistics_company
+        form.logistics_number.data = exit_record.logistics_number
+        
+        # 物品和目的地信息
         form.company.data = exit_record.company
+        form.item_category.data = exit_record.item_category
         form.destination.data = exit_record.destination
         form.items.data = exit_record.items
         form.purpose.data = exit_record.purpose
+        
+        # 时间信息
         form.exit_time.data = exit_record.exit_time
         form.expected_return_time.data = exit_record.expected_return_time
+        form.confirmed_exit_time.data = exit_record.confirmed_exit_time
+        
+        # 审批信息
+        form.reviewer.data = exit_record.reviewer
+        form.issuer.data = exit_record.issuer
+        # 处理approver_name可能不存在的情况
+        if hasattr(exit_record, 'approver_name'):
+            form.approver_name.data = exit_record.approver_name
+        elif hasattr(exit_record, 'approver'):
+            form.approver_name.data = exit_record.approver
+        else:
+            form.approver_name.data = None
+        form.guard.data = exit_record.guard
+        
+        # 其他信息
         form.remarks.data = exit_record.remarks
     
     if form.validate_on_submit():
+        # 基本信息保持不变
+        # exit_record.exit_type = form.exit_type.data
+        
+        # 申请信息
+        exit_record.department = form.department.data
+        exit_record.initiator = form.initiator.data
+        exit_record.certificate_number = form.certificate_number.data
+        
+        # 车辆和司机信息
         exit_record.plate_number = form.plate_number.data
         exit_record.driver_name = form.driver_name.data
         exit_record.id_number = form.id_number.data
         exit_record.phone = form.phone.data
+        
+        # 物流信息
+        exit_record.vehicle_type = form.vehicle_type.data
+        exit_record.logistics_type = form.logistics_type.data
+        exit_record.logistics_company = form.logistics_company.data
+        exit_record.logistics_number = form.logistics_number.data
+        
+        # 物品和目的地信息
         exit_record.company = form.company.data
+        exit_record.item_category = form.item_category.data
         exit_record.destination = form.destination.data
         exit_record.items = form.items.data
         exit_record.purpose = form.purpose.data
+        
+        # 时间信息
         exit_record.exit_time = form.exit_time.data
         exit_record.expected_return_time = form.expected_return_time.data
+        exit_record.confirmed_exit_time = form.confirmed_exit_time.data
+        
+        # 审批信息
+        exit_record.reviewer = form.reviewer.data
+        exit_record.issuer = form.issuer.data
+        # 单独设置 approver_name 字段
+        if hasattr(exit_record, 'approver_name'):
+            exit_record.approver_name = form.approver_name.data
+        exit_record.guard = form.guard.data
+        
+        # 其他信息
         exit_record.remarks = form.remarks.data
         exit_record.updated_at = datetime.utcnow()
         

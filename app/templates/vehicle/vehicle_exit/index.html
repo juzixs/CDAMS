@@ -107,7 +107,7 @@
                             <td>{{ record.department or '-' }}</td>
                             <td>{{ record.initiator or '-' }}</td>
                             <td>{{ record.certificate_number or '-' }}</td>
-                            <td>{{ record.exit_time.strftime('%Y-%m-%d %H:%M') if record.exit_time else '-' }}</td>
+                            <td>{{ record.exit_time.strftime('%Y-%m-%d') if record.exit_time else '-' }}</td>
                             <td>{{ record.company or '-' }}</td>
                             <td>
                                 {% if record.item_category == 'product' %}
@@ -155,7 +155,7 @@
                             <td>{{ record.issuer or '-' }}</td>
                             <td>{{ record.approver or '-' }}</td>
                             <td>{{ record.guard or '-' }}</td>
-                            <td>{{ record.confirmed_exit_time.strftime('%Y-%m-%d %H:%M') if record.confirmed_exit_time else '-' }}</td>
+                            <td>{{ record.confirmed_exit_time.strftime('%Y-%m-%d') if record.confirmed_exit_time else '-' }}</td>
                             <td>{{ record.remarks or '-' }}</td>
                             <td>
                                 <div class="btn-group">
