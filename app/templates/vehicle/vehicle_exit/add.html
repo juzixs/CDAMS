@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>添加{% if exit_type == 'outsourcing' %}外协{% else %}产成品{% endif %}车辆出门记录</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post" class="row g-3">
+            {{ form.csrf_token }}
+            {{ form.exit_type }}
+            
+            <div class="col-md-3">
+                <label for="department" class="form-label">申请部门</label>
+                {{ form.department(class="form-control" + (" is-invalid" if form.department.errors else ""), placeholder="申请部门") }}
+                {% if form.department.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.department.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="initiator" class="form-label">发起人</label>
+                {{ form.initiator(class="form-control" + (" is-invalid" if form.initiator.errors else ""), placeholder="发起人") }}
+                {% if form.initiator.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.initiator.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="certificate_number" class="form-label">门证编号</label>
+                {{ form.certificate_number(class="form-control" + (" is-invalid" if form.certificate_number.errors else ""), placeholder="门证编号") }}
+                {% if form.certificate_number.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.certificate_number.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="exit_time" class="form-label">申请出厂日期</label>
+                {{ form.exit_time(class="form-control" + (" is-invalid" if form.exit_time.errors else ""), type="date") }}
+                {% if form.exit_time.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.exit_time.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-6">
+                <label for="company" class="form-label">接收单位</label>
+                {{ form.company(class="form-control" + (" is-invalid" if form.company.errors else ""), placeholder="接收单位") }}
+                {% if form.company.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.company.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-6">
+                <label for="item_category" class="form-label">出厂物品分类</label>
+                {{ form.item_category(class="form-select" + (" is-invalid" if form.item_category.errors else "")) }}
+                {% if form.item_category.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.item_category.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="vehicle_type" class="form-label">车型</label>
+                {{ form.vehicle_type(class="form-select" + (" is-invalid" if form.vehicle_type.errors else "")) }}
+                {% if form.vehicle_type.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.vehicle_type.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="logistics_type" class="form-label">物流方式</label>
+                {{ form.logistics_type(class="form-select" + (" is-invalid" if form.logistics_type.errors else "")) }}
+                {% if form.logistics_type.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.logistics_type.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="logistics_company" class="form-label">物流公司名称</label>
+                {{ form.logistics_company(class="form-control" + (" is-invalid" if form.logistics_company.errors else ""), placeholder="物流公司名称") }}
+                {% if form.logistics_company.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.logistics_company.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="logistics_number" class="form-label">物流单号</label>
+                {{ form.logistics_number(class="form-control" + (" is-invalid" if form.logistics_number.errors else ""), placeholder="物流单号") }}
+                {% if form.logistics_number.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.logistics_number.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4">
+                <label for="driver_name" class="form-label">司机姓名 <span class="text-danger">*</span></label>
+                {{ form.driver_name(class="form-control" + (" is-invalid" if form.driver_name.errors else ""), placeholder="司机姓名") }}
+                {% if form.driver_name.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.driver_name.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4">
+                <label for="plate_number" class="form-label">车牌号 <span class="text-danger">*</span></label>
+                {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else ""), placeholder="车牌号") }}
+                {% if form.plate_number.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.plate_number.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-4">
+                <label for="phone" class="form-label">司机联系电话</label>
+                {{ form.phone(class="form-control" + (" is-invalid" if form.phone.errors else ""), placeholder="司机联系电话") }}
+                {% if form.phone.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.phone.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-2">
+                <label for="reviewer" class="form-label">审核人</label>
+                {{ form.reviewer(class="form-control" + (" is-invalid" if form.reviewer.errors else ""), placeholder="审核人") }}
+                {% if form.reviewer.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.reviewer.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-2">
+                <label for="issuer" class="form-label">发放人</label>
+                {{ form.issuer(class="form-control" + (" is-invalid" if form.issuer.errors else ""), placeholder="发放人") }}
+                {% if form.issuer.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.issuer.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-2">
+                <label for="approver" class="form-label">审批人</label>
+                {{ form.approver(class="form-control" + (" is-invalid" if form.approver.errors else ""), placeholder="审批人") }}
+                {% if form.approver.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.approver.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="guard" class="form-label">门卫</label>
+                {{ form.guard(class="form-control" + (" is-invalid" if form.guard.errors else ""), placeholder="门卫") }}
+                {% if form.guard.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.guard.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-md-3">
+                <label for="confirmed_exit_time" class="form-label">确认出厂日期</label>
+                {{ form.confirmed_exit_time(class="form-control" + (" is-invalid" if form.confirmed_exit_time.errors else ""), type="date") }}
+                {% if form.confirmed_exit_time.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.confirmed_exit_time.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-12">
+                <label for="remarks" class="form-label">备注</label>
+                {{ form.remarks(class="form-control" + (" is-invalid" if form.remarks.errors else ""), rows=3, placeholder="其他备注信息") }}
+                {% if form.remarks.errors %}
+                <div class="invalid-feedback">
+                    {% for error in form.remarks.errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="col-12 mt-4">
+                <button type="submit" class="btn btn-primary">保存</button>
+                <a href="{{ url_for('vehicle_exit.index', tab=exit_type) }}" class="btn btn-secondary">返回</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 表单相关脚本
+});
+</script>
+{% endblock %} 

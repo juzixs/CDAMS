@@ -5,6 +5,8 @@ from app.models.dormitory import Dormitory, Room, Resident, Monitor
 from app.ticket.models import Ticket, TicketReply, TicketCategory
 from app.models.setting import Setting
 from app.models.work_report import WeeklyReport, MonthlyReport
+from app.models.vehicle_exit import VehicleExit
 
 __all__ = ['User', 'Module', 'Vehicle', 'PDFSettings', 'Dormitory', 'Room', 'Resident', 'Monitor', 
-           'Ticket', 'TicketReply', 'TicketCategory', 'Setting', 'WeeklyReport', 'MonthlyReport'] 
+           'Ticket', 'TicketReply', 'TicketCategory', 'Setting', 'WeeklyReport', 'MonthlyReport',
+           'VehicleExit'] 

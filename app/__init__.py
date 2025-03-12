@@ -49,6 +49,9 @@ def create_app(config_class=Config):
     from app.vehicle.official_car import bp as official_car_bp
     app.register_blueprint(official_car_bp, url_prefix='/vehicle/official-car')
 
+    from app.vehicle.vehicle_exit import bp as vehicle_exit_bp
+    app.register_blueprint(vehicle_exit_bp, url_prefix='/vehicle/vehicle-exit')
+
     from app.user import bp as user_bp
     app.register_blueprint(user_bp, url_prefix='/user')
 

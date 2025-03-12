@@ -192,3 +192,31 @@ class Monitor(db.Model):
 
     def __repr__(self):
         return f'<Monitor {self.name}>' 
+
+class VehicleExit(db.Model):
+    """车辆出门记录模型"""
+    id = db.Column(db.Integer, primary_key=True)
+    exit_type = db.Column(db.String(20), nullable=False, comment='出门类型：outsourcing（外协）或 product（产成品）')
+    plate_number = db.Column(db.String(20), nullable=False, comment='车牌号')
+    driver_name = db.Column(db.String(50), nullable=False, comment='驾驶员姓名')
+    id_number = db.Column(db.String(30), comment='身份证号码')
+    phone = db.Column(db.String(20), comment='联系电话')
+    company = db.Column(db.String(100), comment='单位名称')
+    destination = db.Column(db.String(200), comment='目的地')
+    items = db.Column(db.Text, comment='携带物品')
+    purpose = db.Column(db.String(200), comment='出门事由')
+    exit_time = db.Column(db.DateTime, comment='出门时间')
+    expected_return_time = db.Column(db.DateTime, comment='预计返回时间')
+    actual_return_time = db.Column(db.DateTime, comment='实际返回时间')
+    status = db.Column(db.String(20), default='pending', comment='状态：pending（待审核）, approved（已审核）, completed（已完成）')
+    remarks = db.Column(db.Text, comment='备注')
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), comment='创建人ID')
+    approved_by = db.Column(db.Integer, db.ForeignKey('user.id'), comment='审核人ID')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+    
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_exits')
+    approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_exits')
+    
+    def __repr__(self):
+        return f'<VehicleExit {self.id} {self.plate_number}>' 

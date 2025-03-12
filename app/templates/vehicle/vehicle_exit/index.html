@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>车辆出门管理</h1>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs" id="exitTypeTabs">
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'outsourcing' %}active{% endif %}" 
+                   href="{{ url_for('vehicle_exit.index', tab='outsourcing') }}">
+                    外协
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if active_tab == 'product' %}active{% endif %}" 
+                   href="{{ url_for('vehicle_exit.index', tab='product') }}">
+                    产成品
+                </a>
+            </li>
+        </ul>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-3">
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('vehicle_exit.add', exit_type=active_tab) }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> 新增
+                </a>
+                <button type="button" class="btn btn-danger" id="batchDelete" disabled>
+                    <i class="fas fa-trash"></i> 删除
+                </button>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="fas fa-file-import"></i> 导入
+                </button>
+                <a href="{{ url_for('vehicle_exit.export', exit_type=active_tab, status=request.args.get('status', ''), 
+                                                search=request.args.get('search', '')) }}" 
+                   class="btn btn-info">
+                    <i class="fas fa-file-export"></i> 导出
+                </a>
+            </div>
+        </div>
+        
+        <div class="mb-3">
+            <form method="get" class="row g-3">
+                <input type="hidden" name="tab" value="{{ active_tab }}">
+                <div class="col-md-6">
+                    <input type="text" name="search" class="form-control" placeholder="搜索车牌号/驾驶员/目的地/物品..." value="{{ request.args.get('search', '') }}">
+                </div>
+                <div class="col-md-4">
+                    <select name="status" class="form-select">
+                        <option value="">所有状态</option>
+                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待审核</option>
+                        <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>已审核</option>
+                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>已完成</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-secondary w-100">
+                        <i class="fas fa-search"></i> 搜索
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="table-responsive">
+            <form id="recordForm" method="post" action="{{ url_for('vehicle_exit.batch_action') }}">
+                {{ form.csrf_token }}
+                <input type="hidden" name="action" id="batchAction" value="">
+                <input type="hidden" name="exit_type" value="{{ active_tab }}">
+                
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAll"></th>
+                            <th>序号</th>
+                            <th>申请部门</th>
+                            <th>发起人</th>
+                            <th>门证编号</th>
+                            <th>申请出厂日期</th>
+                            <th>接收单位</th>
+                            <th>出厂物品分类</th>
+                            <th>车型</th>
+                            <th>物流方式</th>
+                            <th>物流公司名称</th>
+                            <th>司机姓名</th>
+                            <th>车牌号</th>
+                            <th>司机联系电话</th>
+                            <th>物流单号</th>
+                            <th>审核人</th>
+                            <th>发放人</th>
+                            <th>审批人</th>
+                            <th>门卫</th>
+                            <th>确认出厂日期</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in records.items %}
+                        <tr>
+                            <td><input type="checkbox" name="record_ids[]" value="{{ record.id }}"></td>
+                            <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
+                            <td>{{ record.department or '-' }}</td>
+                            <td>{{ record.initiator or '-' }}</td>
+                            <td>{{ record.certificate_number or '-' }}</td>
+                            <td>{{ record.exit_time.strftime('%Y-%m-%d %H:%M') if record.exit_time else '-' }}</td>
+                            <td>{{ record.company or '-' }}</td>
+                            <td>
+                                {% if record.item_category == 'product' %}
+                                产成品交付
+                                {% elif record.item_category == 'outsourcing' %}
+                                外协
+                                {% elif record.item_category == 'material' %}
+                                园区物料周转
+                                {% elif record.item_category == 'other' %}
+                                其他
+                                {% else %}
+                                {{ record.item_category or '-' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.vehicle_type == 'truck' %}
+                                货车
+                                {% elif record.vehicle_type == 'tractor' %}
+                                拖拉机
+                                {% elif record.vehicle_type == 'express' %}
+                                快递
+                                {% elif record.vehicle_type == 'other' %}
+                                其他
+                                {% else %}
+                                {{ record.vehicle_type or '-' }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.logistics_type == 'company' %}
+                                公司自有车辆
+                                {% elif record.logistics_type == 'logistics' %}
+                                物流公司车辆
+                                {% elif record.logistics_type == 'outsourcing' %}
+                                外协车辆
+                                {% else %}
+                                {{ record.logistics_type or '-' }}
+                                {% endif %}
+                            </td>
+                            <td>{{ record.logistics_company or '-' }}</td>
+                            <td>{{ record.driver_name or '-' }}</td>
+                            <td>{{ record.plate_number or '-' }}</td>
+                            <td>{{ record.phone or '-' }}</td>
+                            <td>{{ record.logistics_number or '-' }}</td>
+                            <td>{{ record.reviewer or '-' }}</td>
+                            <td>{{ record.issuer or '-' }}</td>
+                            <td>{{ record.approver or '-' }}</td>
+                            <td>{{ record.guard or '-' }}</td>
+                            <td>{{ record.confirmed_exit_time.strftime('%Y-%m-%d %H:%M') if record.confirmed_exit_time else '-' }}</td>
+                            <td>{{ record.remarks or '-' }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('vehicle_exit.edit', id=record.id) }}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-danger delete-record" data-id="{{ record.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                    {% if record.status == 'pending' and current_user.is_admin %}
+                                    <a href="{{ url_for('vehicle_exit.approve', id=record.id) }}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i>
+                                    </a>
+                                    {% endif %}
+                                    {% if record.status == 'approved' and not record.actual_return_time %}
+                                    <a href="{{ url_for('vehicle_exit.complete', id=record.id) }}" class="btn btn-sm btn-info">
+                                        <i class="fas fa-flag-checkered"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </form>
+        </div>
+        
+        {% if records.items %}
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <div class="d-flex align-items-center gap-3">
+                <form method="get" class="d-flex align-items-center">
+                    {% for key, value in request.args.items() %}
+                        {% if key != 'per_page' and key != 'page' %}
+                        <input type="hidden" name="{{ key }}" value="{{ value }}">
+                        {% endif %}
+                    {% endfor %}
+                    <select name="per_page" class="form-select" style="width: auto;" onchange="this.form.submit()">
+                        <option value="10" {% if request.args.get('per_page', '10') == '10' %}selected{% endif %}>每页10条</option>
+                        <option value="20" {% if request.args.get('per_page') == '20' %}selected{% endif %}>每页20条</option>
+                        <option value="50" {% if request.args.get('per_page') == '50' %}selected{% endif %}>每页50条</option>
+                    </select>
+                </form>
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% for page in records.iter_pages() %}
+                            {% if page %}
+                                {% set args = request.args.copy() %}
+                                {% set _ = args.pop('page', None) %}
+                                <li class="page-item {% if page == records.page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('vehicle_exit.index', page=page, **args) }}">{{ page }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">...</span>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% else %}
+        <div class="alert alert-info">暂无出门记录</div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- 导入模态框 -->
+<div class="modal fade" id="importModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">导入{% if active_tab == 'outsourcing' %}外协{% else %}产成品{% endif %}出门记录</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    {{ form.csrf_token }}
+                    <input type="hidden" name="exit_type" value="{{ active_tab }}">
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">选择Excel文件</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".xlsx" required>
+                    </div>
+                    <div class="text-end mb-3">
+                        <a href="{{ url_for('vehicle_exit.import_template', exit_type=active_tab) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-download"></i> 下载导入模板
+                        </a>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>导入说明：</h6>
+                        <ul class="mb-0">
+                            <li>仅支持.xlsx格式的Excel文件</li>
+                            <li>必填字段：车牌号、驾驶员姓名</li>
+                            <li>请确保数据格式与模板一致</li>
+                        </ul>
+                    </div>
+                    <div id="importResult" style="display: none;"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                <button type="button" class="btn btn-primary" id="importSubmit">导入</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 删除确认模态框 -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认删除</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除选中的出门记录吗？此操作不可恢复。</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">确认删除</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // 全选/取消全选
+    $('#selectAll').change(function() {
+        $('input[name="record_ids[]"]').prop('checked', $(this).prop('checked'));
+        updateBatchDeleteButton();
+    });
+
+    // 单个复选框变化时更新删除按钮状态
+    $('input[name="record_ids[]"]').change(function() {
+        updateBatchDeleteButton();
+    });
+
+    // 更新批量删除按钮状态
+    function updateBatchDeleteButton() {
+        var checkedCount = $('input[name="record_ids[]"]:checked').length;
+        $('#batchDelete').prop('disabled', checkedCount === 0);
+    }
+
+    // 批量删除
+    $('#batchDelete').click(function() {
+        $('#deleteModal').modal('show');
+    });
+
+    // 确认删除
+    $('#confirmDelete').click(function() {
+        $('#batchAction').val('delete');
+        $('#recordForm').submit();
+    });
+
+    // 单个删除
+    $('.delete-record').click(function() {
+        var id = $(this).data('id');
+        // 取消所有选中
+        $('input[name="record_ids[]"]').prop('checked', false);
+        // 选中当前一个
+        $('input[name="record_ids[]"][value="' + id + '"]').prop('checked', true);
+        $('#deleteModal').modal('show');
+    });
+
+    // 导入提交
+    $('#importSubmit').click(function() {
+        var formData = new FormData($('#importForm')[0]);
+        
+        $.ajax({
+            url: "{{ url_for('vehicle_exit.import_records') }}",
+            type: "POST",
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                $('#importResult').html('<div class="alert alert-success">' + response.message + '</div>').show();
+                // 3秒后刷新页面
+                setTimeout(function() {
+                    window.location.reload();
+                }, 3000);
+            },
+            error: function(xhr) {
+                var response = JSON.parse(xhr.responseText);
+                $('#importResult').html('<div class="alert alert-danger">' + response.error + '</div>').show();
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

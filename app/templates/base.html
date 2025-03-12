@@ -539,6 +539,13 @@
                                 </a>
                             </li>
                             <li class="nav-item">
+                                <a class="nav-link {% if request.endpoint == 'vehicle_exit.index' %}active{% endif %}" 
+                                   href="{{ url_for('vehicle_exit.index') }}"
+                                   data-title="车辆出门">
+                                    <i class="fas fa-sign-out-alt"></i> <span>车辆出门</span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link {% if request.endpoint == 'license_plate.index' %}active{% endif %}" 
                                    href="{{ url_for('license_plate.index') }}"
                                    data-title="车辆通行证">
