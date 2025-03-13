@@ -21,7 +21,7 @@ def upgrade():
     with op.batch_alter_table('vehicle_exit', schema=None) as batch_op:
         batch_op.add_column(sa.Column('department', sa.String(length=100), nullable=True, comment='申请部门'))
         batch_op.add_column(sa.Column('initiator', sa.String(length=50), nullable=True, comment='发起人'))
-        batch_op.add_column(sa.Column('certificate_number', sa.String(length=50), nullable=True, comment='门证编号'))
+        batch_op.add_column(sa.Column('certificate_number', sa.String(length=50), nullable=True, comment='出门证编号'))
         batch_op.add_column(sa.Column('vehicle_type', sa.String(length=20), nullable=True, comment='车型：truck（货车）, tractor（拖拉机）, express（快递）, other（其他）'))
         batch_op.add_column(sa.Column('logistics_type', sa.String(length=20), nullable=True, comment='物流方式：company（公司自有车辆）, logistics（物流公司车辆）, outsourcing（外协车辆）'))
         batch_op.add_column(sa.Column('logistics_company', sa.String(length=100), nullable=True, comment='物流公司名称'))

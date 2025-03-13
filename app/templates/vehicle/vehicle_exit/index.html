@@ -37,7 +37,9 @@
                     <i class="fas fa-file-import"></i> 导入
                 </button>
                 <a href="{{ url_for('vehicle_exit.export', exit_type=active_tab, status=request.args.get('status', ''), 
-                                                search=request.args.get('search', '')) }}" 
+                                          search=request.args.get('search', ''), 
+                                          year=request.args.get('year', ''), 
+                                          month=request.args.get('month', '')) }}" 
                    class="btn btn-info">
                     <i class="fas fa-file-export"></i> 导出
                 </a>
@@ -47,19 +49,44 @@
         <div class="mb-3">
             <form method="get" class="row g-3">
                 <input type="hidden" name="tab" value="{{ active_tab }}">
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <input type="text" name="search" class="form-control" placeholder="搜索车牌号/驾驶员/目的地/物品..." value="{{ request.args.get('search', '') }}">
                 </div>
-                <div class="col-md-4">
-                    <select name="status" class="form-select">
-                        <option value="">所有状态</option>
-                        <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>已完成</option>
+                <div class="col-md-2">
+                    <select name="year" class="form-select">
+                        <option value="">选择年份</option>
+                        {% for year in available_years %}
+                            <option value="{{ year }}" {% if request.args.get('year') == year|string %}selected{% endif %}>{{ year }}年</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select name="month" class="form-select">
+                        <option value="">选择月份</option>
+                        {% for month in range(1, 13) %}
+                            <option value="{{ month }}" {% if request.args.get('month') == month|string %}selected{% endif %}>{{ month }}月</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-2">
                     <button type="submit" class="btn btn-secondary w-100">
                         <i class="fas fa-search"></i> 搜索
                     </button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('vehicle_exit.index', tab=active_tab) }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-redo"></i> 重置
+                    </a>
+                </div>
+                <div class="col-md-1">
+                    <a href="{{ url_for('vehicle_exit.index', tab=active_tab, 
+                                        search=request.args.get('search', ''), 
+                                        year=request.args.get('year', ''), 
+                                        month=request.args.get('month', ''),
+                                        sort_order=request.args.get('sort_order', 'desc')|reverse_order) }}" 
+                       class="btn btn-outline-secondary w-100" title="{{ '顺序显示' if request.args.get('sort_order') == 'desc' or not request.args.get('sort_order') else '逆序显示' }}">
+                        <i class="fas fa-{% if request.args.get('sort_order') == 'asc' %}sort-amount-down{% else %}sort-amount-up{% endif %}"></i>
+                    </a>
                 </div>
             </form>
         </div>
@@ -74,10 +101,9 @@
                     <thead>
                         <tr>
                             <th><input type="checkbox" id="selectAll"></th>
-                            <th>序号</th>
                             <th>申请部门</th>
                             <th>发起人</th>
-                            <th>门证编号</th>
+                            <th>出门证编号</th>
                             <th>申请出厂日期</th>
                             <th>接收单位</th>
                             <th>出厂物品分类</th>
@@ -101,7 +127,6 @@
                         {% for record in records.items %}
                         <tr>
                             <td><input type="checkbox" name="record_ids[]" value="{{ record.id }}"></td>
-                            <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
                             <td>{{ record.department or '-' }}</td>
                             <td>{{ record.initiator or '-' }}</td>
                             <td>{{ record.certificate_number or '-' }}</td>
@@ -138,8 +163,10 @@
                                 公司自有车辆
                                 {% elif record.logistics_type == 'logistics' %}
                                 物流公司车辆
-                                {% elif record.logistics_type == 'outsourcing' %}
+                                {% elif record.logistics_type == 'outsourcing' and active_tab != 'product' %}
                                 外协车辆
+                                {% elif record.logistics_type == 'other' %}
+                                其他车辆
                                 {% else %}
                                 {{ record.logistics_type or '-' }}
                                 {% endif %}
@@ -237,11 +264,18 @@
                         <h6>导入说明：</h6>
                         <ul class="mb-0">
                             <li>仅支持.xlsx格式的Excel文件</li>
-                            <li>必填字段：车牌号、驾驶员姓名</li>
+                            <li>必填字段：申请部门、发起人、出门证编号、申请出厂日期</li>
+                            <li>日期格式：YYYY-MM-DD（例如：2025-03-13）</li>
+                            <li>车型选项：货车、拖拉机、快递、其他</li>
+                            <li>物流方式选项：公司自有车辆、物流公司车辆、外协车辆、其他车辆</li>
+                            <li>出厂物品分类：{% if active_tab == 'outsourcing' %}外协{% else %}产成品交付{% endif %}、园区物料周转、其他</li>
                             <li>请确保数据格式与模板一致</li>
                         </ul>
                     </div>
                     <div id="importResult" style="display: none;"></div>
+                    <div class="progress" id="importProgress" style="display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -317,6 +351,10 @@ $(document).ready(function() {
     $('#importSubmit').click(function() {
         var formData = new FormData($('#importForm')[0]);
         
+        // 显示进度条
+        $('#importProgress').show();
+        $('#importResult').hide();
+        
         $.ajax({
             url: "{{ url_for('vehicle_exit.import_records') }}",
             type: "POST",
@@ -324,15 +362,50 @@ $(document).ready(function() {
             contentType: false,
             processData: false,
             success: function(response) {
-                $('#importResult').html('<div class="alert alert-success">' + response.message + '</div>').show();
+                // 隐藏进度条
+                $('#importProgress').hide();
+                
+                // 显示成功消息
+                var successMessage = '<div class="alert alert-success">' + response.message + '</div>';
+                $('#importResult').html(successMessage).show();
+                
                 // 3秒后刷新页面
                 setTimeout(function() {
                     window.location.reload();
                 }, 3000);
             },
             error: function(xhr) {
-                var response = JSON.parse(xhr.responseText);
-                $('#importResult').html('<div class="alert alert-danger">' + response.error + '</div>').show();
+                // 隐藏进度条
+                $('#importProgress').hide();
+                
+                var errorMessage = '';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMessage = response.error;
+                } catch (e) {
+                    errorMessage = '导入失败，请检查文件格式或联系管理员';
+                }
+                
+                // 显示错误消息
+                var errorHtml = '<div class="alert alert-danger">';
+                errorHtml += '<h6>导入失败：</h6>';
+                
+                // 如果错误消息包含换行符，则使用列表显示
+                if (errorMessage.includes('\n')) {
+                    errorHtml += '<ul>';
+                    var errorLines = errorMessage.split('\n');
+                    for (var i = 0; i < errorLines.length; i++) {
+                        if (errorLines[i].trim() !== '') {
+                            errorHtml += '<li>' + errorLines[i] + '</li>';
+                        }
+                    }
+                    errorHtml += '</ul>';
+                } else {
+                    errorHtml += '<p>' + errorMessage + '</p>';
+                }
+                
+                errorHtml += '</div>';
+                $('#importResult').html(errorHtml).show();
             }
         });
     });
