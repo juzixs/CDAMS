@@ -668,8 +668,11 @@
                 $('.sidebar').addClass('collapsed');
             }
             
-            // 移除Bootstrap的collapse相关属性和事件
+            // 移除Bootstrap的collapse相关属性和事件，但保留原始属性值以便后续使用
             $('.sidebar .nav-link[data-bs-toggle="collapse"]').each(function() {
+                var target = $(this).attr('href');
+                $(this).attr('data-original-toggle', 'collapse');
+                $(this).attr('data-target', target);
                 $(this).removeAttr('data-bs-toggle');
                 $(this).attr('data-menu-toggle', 'collapse');
             });
@@ -681,8 +684,14 @@
                     var id = '#' + $(this).attr('id');
                     var $link = $('a[href="' + id + '"]');
                     $link.attr('aria-expanded', 'true');
+                    
+                    // 确保子菜单在非折叠状态下可见
+                    if (!$('.sidebar').hasClass('collapsed')) {
+                        $(this).show();
+                    }
+                } else {
+                    $(this).hide();
                 }
-                $(this).removeClass('show');
             });
 
             // 添加空间容器用于收起状态下的子菜单
@@ -761,10 +770,12 @@
             var $link = $(e.currentTarget);
             var target = $link.attr('href');
             var $submenu = $(target);
-            var isExpanded = $submenu.attr('data-expanded') === 'true';
+            
+            // 检查子菜单是否可见
+            var isVisible = $submenu.is(':visible');
             
             // 切换子菜单展开状态
-            if (isExpanded) {
+            if (isVisible) {
                 $submenu.slideUp(200).attr('data-expanded', 'false');
                 $link.attr('aria-expanded', 'false');
             } else {
@@ -792,7 +803,8 @@
         }
         
         // 绑定菜单交互事件
-        $('.sidebar').on('click', '[data-menu-toggle="collapse"]', function(e) {
+        $('.sidebar').on('click', '.nav-link[data-menu-toggle="collapse"]', function(e) {
+            e.preventDefault();
             if ($('.sidebar').hasClass('collapsed')) {
                 handleCollapsedMenu(e);
             } else {

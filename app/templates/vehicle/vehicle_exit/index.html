@@ -50,7 +50,7 @@
             <form method="get" class="row g-3">
                 <input type="hidden" name="tab" value="{{ active_tab }}">
                 <div class="col-md-3">
-                    <input type="text" name="search" class="form-control" placeholder="搜索车牌号/驾驶员/目的地/物品..." value="{{ request.args.get('search', '') }}">
+                    <input type="text" name="search" class="form-control" placeholder="搜索任意字段（车牌号/驾驶员/目的地/物品/部门/发起人等）" value="{{ request.args.get('search', '') }}">
                 </div>
                 <div class="col-md-2">
                     <select name="year" class="form-select">
