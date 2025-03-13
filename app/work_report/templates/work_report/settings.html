@@ -1,12 +1,71 @@
 {% extends "base.html" %}
 
+{% block styles %}
+<style>
+    /* 响应式设计样式 */
+    @media (max-width: 768px) {
+        .header-actions {
+            margin-top: 1rem;
+            width: 100%;
+        }
+        
+        .header-container {
+            flex-direction: column;
+            align-items: start !important;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+    }
+    
+    /* 拖拽排序样式 */
+    .sortable-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sortable-item {
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 0.25rem;
+        cursor: move;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .sortable-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .sortable-item .handle {
+        cursor: move;
+        color: #6c757d;
+        margin-right: 0.5rem;
+    }
+    
+    .sortable-placeholder {
+        border: 1px dashed #ced4da;
+        background-color: #f1f3f5;
+        height: 3rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>工作汇报设置</h2>
-        <a href="{{ url_for('work_report.index') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> 返回工作汇报
-        </a>
+<div class="container-fluid px-2 px-md-3 px-lg-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 header-container flex-wrap">
+        <h2 class="mb-0">工作汇报设置</h2>
+        <div class="header-actions">
+            <a href="{{ url_for('work_report.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> 返回工作汇报
+            </a>
+        </div>
     </div>
     
     <div class="card mb-4">
@@ -74,11 +133,11 @@
                             <tbody id="person-order-list">
                                 {% for person in person_order %}
                                 <tr class="{% if person in admin_users %}table-primary{% elif person in nonexistent_users %}table-danger{% endif %}">
-                                    <td>{{ loop.index }}</td>
+                                    <td class="align-middle">{{ loop.index }}</td>
                                     <td>
                                         <input type="text" class="form-control form-control-sm" name="person_names[]" value="{{ person }}">
                                     </td>
-                                    <td>
+                                    <td class="align-middle">
                                         {% if person in admin_users %}
                                             <span class="badge bg-primary">行政部</span>
                                         {% elif person in other_users %}
@@ -87,9 +146,9 @@
                                             <span class="badge bg-danger">已删除</span>
                                         {% endif %}
                                     </td>
-                                    <td>
+                                    <td class="text-center align-middle">
                                         <button type="button" class="btn btn-sm btn-danger remove-person">
-                                            <i class="fas fa-trash"></i>
+                                            <i class="fas fa-times"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -152,22 +211,24 @@
             <form method="post" action="{{ url_for('work_report.update_reminder_settings') }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 
-                <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder" 
-                               {% if settings.get('enable_weekly_reminder') %}checked{% endif %}>
-                        <label class="form-check-label" for="enable_weekly_reminder">启用周报提醒</label>
+                <div class="row mb-3">
+                    <div class="col-12 col-md-6">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_weekly_reminder" name="enable_weekly_reminder" 
+                                   {% if settings.get('enable_weekly_reminder') %}checked{% endif %}>
+                            <label class="form-check-label" for="enable_weekly_reminder">启用周报提醒</label>
+                        </div>
+                        <div class="form-text">每周五工作结束前提醒填写周报</div>
                     </div>
-                    <div class="form-text">每周五工作结束前提醒填写周报</div>
-                </div>
-                
-                <div class="mb-3">
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder"
-                               {% if settings.get('enable_monthly_reminder') %}checked{% endif %}>
-                        <label class="form-check-label" for="enable_monthly_reminder">启用月报提醒</label>
+                    
+                    <div class="col-12 col-md-6 mt-3 mt-md-0">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_monthly_reminder" name="enable_monthly_reminder"
+                                   {% if settings.get('enable_monthly_reminder') %}checked{% endif %}>
+                            <label class="form-check-label" for="enable_monthly_reminder">启用月报提醒</label>
+                        </div>
+                        <div class="form-text">每月最后一个工作日提醒填写月报</div>
                     </div>
-                    <div class="form-text">每月最后一个工作日提醒填写月报</div>
                 </div>
                 
                 <div class="text-end">
@@ -189,16 +250,16 @@ $(document).ready(function() {
         var rowCount = $('#person-order-list tr').length + 1;
         var newRow = `
             <tr>
-                <td>${rowCount}</td>
+                <td class="align-middle">${rowCount}</td>
                 <td>
                     <input type="text" class="form-control form-control-sm" name="person_names[]" value="">
                 </td>
-                <td>
-                    <span class="badge bg-warning">自定义</span>
+                <td class="align-middle">
+                    <span class="badge bg-secondary">新增</span>
                 </td>
-                <td>
+                <td class="text-center align-middle">
                     <button type="button" class="btn btn-sm btn-danger remove-person">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-times"></i>
                     </button>
                 </td>
             </tr>
@@ -266,6 +327,23 @@ $(document).ready(function() {
         $('#add-selected-person').prop('disabled', true);
         $('#user-select').prop('disabled', true);
     }
+    
+    // 响应式调整
+    function adjustForScreenSize() {
+        if (window.innerWidth < 768) {
+            // 小屏幕适配
+            $('.table-responsive').addClass('table-sm');
+            $('.btn').addClass('btn-sm');
+        } else {
+            // 大屏幕适配
+            $('.table-responsive').removeClass('table-sm');
+            $('.btn:not(.btn-sm)').removeClass('btn-sm');
+        }
+    }
+    
+    // 初始调整和窗口大小变化时调整
+    adjustForScreenSize();
+    $(window).resize(adjustForScreenSize);
 });
 </script>
 {% endblock %} 
