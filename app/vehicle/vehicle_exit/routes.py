@@ -43,7 +43,17 @@ def index():
                 VehicleExit.plate_number.contains(search),
                 VehicleExit.driver_name.contains(search),
                 VehicleExit.destination.contains(search),
-                VehicleExit.items.contains(search)
+                VehicleExit.items.contains(search),
+                VehicleExit.department.contains(search),
+                VehicleExit.initiator.contains(search),
+                VehicleExit.company.contains(search),
+                VehicleExit.logistics_company.contains(search),
+                VehicleExit.logistics_number.contains(search),
+                VehicleExit.purpose.contains(search),
+                VehicleExit.remarks.contains(search),
+                VehicleExit.certificate_number.contains(search),
+                VehicleExit.phone.contains(search),
+                VehicleExit.id_number.contains(search)
             )
         )
     
@@ -560,7 +570,17 @@ def export():
                 VehicleExit.plate_number.contains(search),
                 VehicleExit.driver_name.contains(search),
                 VehicleExit.destination.contains(search),
-                VehicleExit.items.contains(search)
+                VehicleExit.items.contains(search),
+                VehicleExit.department.contains(search),
+                VehicleExit.initiator.contains(search),
+                VehicleExit.company.contains(search),
+                VehicleExit.logistics_company.contains(search),
+                VehicleExit.logistics_number.contains(search),
+                VehicleExit.purpose.contains(search),
+                VehicleExit.remarks.contains(search),
+                VehicleExit.certificate_number.contains(search),
+                VehicleExit.phone.contains(search),
+                VehicleExit.id_number.contains(search)
             )
         )
     
