@@ -12,7 +12,7 @@
             {{ form.exit_type }}
             
             <div class="col-md-3">
-                <label for="department" class="form-label">申请部门</label>
+                <label for="department" class="form-label">申请部门 <span class="text-danger">*</span></label>
                 {{ form.department(class="form-control" + (" is-invalid" if form.department.errors else ""), placeholder="申请部门") }}
                 {% if form.department.errors %}
                 <div class="invalid-feedback">
@@ -24,7 +24,7 @@
             </div>
             
             <div class="col-md-3">
-                <label for="initiator" class="form-label">发起人</label>
+                <label for="initiator" class="form-label">发起人 <span class="text-danger">*</span></label>
                 {{ form.initiator(class="form-control" + (" is-invalid" if form.initiator.errors else ""), placeholder="发起人") }}
                 {% if form.initiator.errors %}
                 <div class="invalid-feedback">
@@ -36,8 +36,8 @@
             </div>
             
             <div class="col-md-3">
-                <label for="certificate_number" class="form-label">门证编号</label>
-                {{ form.certificate_number(class="form-control" + (" is-invalid" if form.certificate_number.errors else ""), placeholder="门证编号") }}
+                <label for="certificate_number" class="form-label">出门证编号 <span class="text-danger">*</span></label>
+                {{ form.certificate_number(class="form-control" + (" is-invalid" if form.certificate_number.errors else ""), placeholder="出门证编号") }}
                 {% if form.certificate_number.errors %}
                 <div class="invalid-feedback">
                     {% for error in form.certificate_number.errors %}
@@ -48,7 +48,7 @@
             </div>
             
             <div class="col-md-3">
-                <label for="exit_time" class="form-label">申请出厂日期</label>
+                <label for="exit_time" class="form-label">申请出厂日期 <span class="text-danger">*</span></label>
                 {{ form.exit_time(class="form-control" + (" is-invalid" if form.exit_time.errors else ""), type="date") }}
                 {% if form.exit_time.errors %}
                 <div class="invalid-feedback">
@@ -132,7 +132,7 @@
             </div>
             
             <div class="col-md-4">
-                <label for="driver_name" class="form-label">司机姓名 <span class="text-danger">*</span></label>
+                <label for="driver_name" class="form-label">司机姓名</label>
                 {{ form.driver_name(class="form-control" + (" is-invalid" if form.driver_name.errors else ""), placeholder="司机姓名") }}
                 {% if form.driver_name.errors %}
                 <div class="invalid-feedback">
@@ -144,7 +144,7 @@
             </div>
             
             <div class="col-md-4">
-                <label for="plate_number" class="form-label">车牌号 <span class="text-danger">*</span></label>
+                <label for="plate_number" class="form-label">车牌号</label>
                 {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else ""), placeholder="车牌号") }}
                 {% if form.plate_number.errors %}
                 <div class="invalid-feedback">

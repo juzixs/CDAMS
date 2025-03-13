@@ -9,13 +9,13 @@ class VehicleExitForm(FlaskForm):
     exit_type = HiddenField('出门类型', validators=[DataRequired()])
     
     # 申请信息
-    department = StringField('申请部门', validators=[Optional(), Length(max=100)])
-    initiator = StringField('发起人', validators=[Optional(), Length(max=50)])
-    certificate_number = StringField('门证编号', validators=[Optional(), Length(max=50)])
+    department = StringField('申请部门', validators=[DataRequired(), Length(max=100)])
+    initiator = StringField('发起人', validators=[DataRequired(), Length(max=50)])
+    certificate_number = StringField('出门证编号', validators=[DataRequired(), Length(max=50)])
     
     # 车辆和司机信息
-    plate_number = StringField('车牌号', validators=[DataRequired(), Length(max=20)])
-    driver_name = StringField('驾驶员姓名', validators=[DataRequired(), Length(max=50)])
+    plate_number = StringField('车牌号', validators=[Optional(), Length(max=20)])
+    driver_name = StringField('驾驶员姓名', validators=[Optional(), Length(max=50)])
     phone = StringField('司机联系电话', validators=[Optional(), Length(max=20)])
     id_number = StringField('身份证号码', validators=[Optional(), Length(max=30)])
     
@@ -52,7 +52,7 @@ class VehicleExitForm(FlaskForm):
     purpose = StringField('出门事由', validators=[Optional(), Length(max=200)])
     
     # 时间信息
-    exit_time = DateTimeField('申请出厂日期', format='%Y-%m-%d', validators=[Optional()])
+    exit_time = DateTimeField('申请出厂日期', format='%Y-%m-%d', validators=[DataRequired()])
     expected_return_time = DateTimeField('预计返回时间', format='%Y-%m-%d', validators=[Optional()])
     confirmed_exit_time = DateTimeField('确认出厂日期', format='%Y-%m-%d', validators=[Optional()])
     

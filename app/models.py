@@ -201,7 +201,7 @@ class VehicleExit(db.Model):
     # 申请信息
     department = db.Column(db.String(100), comment='申请部门')
     initiator = db.Column(db.String(50), comment='发起人')
-    certificate_number = db.Column(db.String(50), comment='门证编号')
+    certificate_number = db.Column(db.String(50), comment='出门证编号')
     
     # 车辆和司机信息
     plate_number = db.Column(db.String(20), nullable=False, comment='车牌号')

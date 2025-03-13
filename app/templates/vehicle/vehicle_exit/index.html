@@ -103,7 +103,7 @@
                             <th><input type="checkbox" id="selectAll"></th>
                             <th>申请部门</th>
                             <th>发起人</th>
-                            <th>门证编号</th>
+                            <th>出门证编号</th>
                             <th>申请出厂日期</th>
                             <th>接收单位</th>
                             <th>出厂物品分类</th>
@@ -264,11 +264,18 @@
                         <h6>导入说明：</h6>
                         <ul class="mb-0">
                             <li>仅支持.xlsx格式的Excel文件</li>
-                            <li>必填字段：车牌号、驾驶员姓名</li>
+                            <li>必填字段：申请部门、发起人、出门证编号、申请出厂日期</li>
+                            <li>日期格式：YYYY-MM-DD（例如：2025-03-13）</li>
+                            <li>车型选项：货车、拖拉机、快递、其他</li>
+                            <li>物流方式选项：公司自有车辆、物流公司车辆、外协车辆、其他车辆</li>
+                            <li>出厂物品分类：{% if active_tab == 'outsourcing' %}外协{% else %}产成品交付{% endif %}、园区物料周转、其他</li>
                             <li>请确保数据格式与模板一致</li>
                         </ul>
                     </div>
                     <div id="importResult" style="display: none;"></div>
+                    <div class="progress" id="importProgress" style="display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%"></div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">
@@ -344,6 +351,10 @@ $(document).ready(function() {
     $('#importSubmit').click(function() {
         var formData = new FormData($('#importForm')[0]);
         
+        // 显示进度条
+        $('#importProgress').show();
+        $('#importResult').hide();
+        
         $.ajax({
             url: "{{ url_for('vehicle_exit.import_records') }}",
             type: "POST",
@@ -351,15 +362,50 @@ $(document).ready(function() {
             contentType: false,
             processData: false,
             success: function(response) {
-                $('#importResult').html('<div class="alert alert-success">' + response.message + '</div>').show();
+                // 隐藏进度条
+                $('#importProgress').hide();
+                
+                // 显示成功消息
+                var successMessage = '<div class="alert alert-success">' + response.message + '</div>';
+                $('#importResult').html(successMessage).show();
+                
                 // 3秒后刷新页面
                 setTimeout(function() {
                     window.location.reload();
                 }, 3000);
             },
             error: function(xhr) {
-                var response = JSON.parse(xhr.responseText);
-                $('#importResult').html('<div class="alert alert-danger">' + response.error + '</div>').show();
+                // 隐藏进度条
+                $('#importProgress').hide();
+                
+                var errorMessage = '';
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    errorMessage = response.error;
+                } catch (e) {
+                    errorMessage = '导入失败，请检查文件格式或联系管理员';
+                }
+                
+                // 显示错误消息
+                var errorHtml = '<div class="alert alert-danger">';
+                errorHtml += '<h6>导入失败：</h6>';
+                
+                // 如果错误消息包含换行符，则使用列表显示
+                if (errorMessage.includes('\n')) {
+                    errorHtml += '<ul>';
+                    var errorLines = errorMessage.split('\n');
+                    for (var i = 0; i < errorLines.length; i++) {
+                        if (errorLines[i].trim() !== '') {
+                            errorHtml += '<li>' + errorLines[i] + '</li>';
+                        }
+                    }
+                    errorHtml += '</ul>';
+                } else {
+                    errorHtml += '<p>' + errorMessage + '</p>';
+                }
+                
+                errorHtml += '</div>';
+                $('#importResult').html(errorHtml).show();
             }
         });
     });
