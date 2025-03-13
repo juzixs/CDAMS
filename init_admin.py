@@ -21,7 +21,7 @@ def init_admin():
         admin.department = '系统管理部'
         admin.phone = '13900000000'
         admin.is_admin = True
-        admin.set_password('Narbnkh2')
+        admin.set_password('admin')
         
         # 保存到数据库
         db.session.add(admin)
