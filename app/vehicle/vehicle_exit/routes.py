@@ -93,6 +93,16 @@ def add():
     
     if request.method == 'GET':
         form.exit_type.data = exit_type
+        
+        # 根据出门类型设置不同的物流方式选项
+        if exit_type == 'product':
+            form.logistics_type.choices = [
+                ('company', '公司自有车辆'),
+                ('logistics', '物流公司车辆'),
+                ('other', '其他车辆')
+            ]
+            # 设置出厂物品分类默认为"产成品交付"
+            form.item_category.data = 'product'
     
     if form.validate_on_submit():
         exit_record = VehicleExit(
@@ -157,6 +167,14 @@ def edit(id):
     """编辑车辆出门记录"""
     exit_record = VehicleExit.query.get_or_404(id)
     form = VehicleExitForm()
+    
+    # 根据出门类型设置不同的物流方式选项
+    if exit_record.exit_type == 'product':
+        form.logistics_type.choices = [
+            ('company', '公司自有车辆'),
+            ('logistics', '物流公司车辆'),
+            ('other', '其他车辆')
+        ]
     
     if request.method == 'GET':
         # 基本信息
