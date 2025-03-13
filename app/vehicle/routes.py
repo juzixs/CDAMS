@@ -9,6 +9,8 @@ from app.vehicle import bp
 from app.models import Vehicle
 from app.vehicle.forms import VehicleForm
 from app.vehicle.utils import export_vehicles_to_excel, import_vehicles_from_excel
+import pandas as pd
+from io import BytesIO
 
 @bp.route('/')
 @login_required
@@ -264,14 +266,44 @@ def export():
     
     # 生成Excel文件
     filename = f'vehicles_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-    filepath = os.path.join(current_app.instance_path, filename)
-    os.makedirs(current_app.instance_path, exist_ok=True)
-    export_vehicles_to_excel(vehicles, filepath)
     
-    return send_file(filepath, 
-                    as_attachment=True,
-                    download_name=filename,
-                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    # 创建内存中的Excel文件，而不是保存到文件系统
+    data = []
+    for vehicle in vehicles:
+        data.append({
+            '车牌号': vehicle.plate_number,
+            '车辆类型': vehicle.vehicle_type,
+            '车主姓名': vehicle.owner_name,
+            '所属部门': vehicle.department,
+            '备注': vehicle.remarks,
+            '状态': vehicle.status,
+            '创建时间': vehicle.created_at.strftime('%Y-%m-%d %H:%M:%S') if vehicle.created_at else '',
+            '发放时间': vehicle.issued_at.strftime('%Y-%m-%d %H:%M:%S') if vehicle.issued_at else ''
+        })
+    
+    # 创建DataFrame
+    df = pd.DataFrame(data)
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name='车辆信息', index=False)
+    
+    # 自动调整列宽
+    worksheet = writer.sheets['车辆信息']
+    for i, col in enumerate(df.columns):
+        column_width = max(df[col].astype(str).map(len).max(), len(col) + 2)
+        worksheet.set_column(i, i, column_width)
+    
+    writer.close()
+    output.seek(0)
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @bp.route('/import', methods=['POST'])
 @login_required

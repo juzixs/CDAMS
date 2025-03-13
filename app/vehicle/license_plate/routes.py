@@ -11,6 +11,8 @@ from app.vehicle.license_plate.forms import VehicleForm
 from app.vehicle.license_plate.utils import export_vehicles_to_excel, import_vehicles_from_excel, create_import_template
 from app.utils.pdf_generator import generate_vehicle_pass_pdf
 from flask_wtf import FlaskForm
+import pandas as pd
+from io import BytesIO
 
 class EmptyForm(FlaskForm):
     pass
@@ -272,14 +274,44 @@ def export():
     
     # 生成Excel文件
     filename = f'vehicles_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-    filepath = os.path.join(current_app.instance_path, filename)
-    os.makedirs(current_app.instance_path, exist_ok=True)
-    export_vehicles_to_excel(vehicles, filepath)
     
-    return send_file(filepath, 
-                    as_attachment=True,
-                    download_name=filename,
-                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    # 创建内存中的Excel文件，而不是保存到文件系统
+    data = []
+    for vehicle in vehicles:
+        data.append({
+            '车牌号': vehicle.plate_number,
+            '车辆类型': vehicle.vehicle_type,
+            '车主姓名': vehicle.owner_name,
+            '所属部门': vehicle.department,
+            '备注': vehicle.remarks,
+            '状态': vehicle.status,
+            '创建时间': vehicle.created_at.strftime('%Y-%m-%d %H:%M:%S') if vehicle.created_at else '',
+            '发放时间': vehicle.issued_at.strftime('%Y-%m-%d %H:%M:%S') if vehicle.issued_at else ''
+        })
+    
+    # 创建DataFrame
+    df = pd.DataFrame(data)
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name='车辆通行证', index=False)
+    
+    # 自动调整列宽
+    worksheet = writer.sheets['车辆通行证']
+    for i, col in enumerate(df.columns):
+        column_width = max(df[col].astype(str).map(len).max(), len(col) + 2)
+        worksheet.set_column(i, i, column_width)
+    
+    writer.close()
+    output.seek(0)
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @bp.route('/import', methods=['POST'])
 @login_required
@@ -318,14 +350,54 @@ def import_vehicles():
 def import_template():
     """下载导入模板"""
     filename = 'vehicle_import_template.xlsx'
-    filepath = os.path.join(current_app.instance_path, filename)
-    os.makedirs(current_app.instance_path, exist_ok=True)
-    create_import_template(filepath)
     
-    return send_file(filepath,
-                    as_attachment=True,
-                    download_name=filename,
-                    mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    # 创建内存中的Excel文件，而不是保存到文件系统
+    df = pd.DataFrame(columns=['车牌号', '车辆类型', '车主姓名', '所属部门', '备注'])
+    df.loc[0] = ['浙A12345', '燃油', '张三', '技术部', '示例数据，导入时请删除此行']
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    df.to_excel(writer, sheet_name='车辆通行证', index=False)
+    
+    # 自动调整列宽
+    worksheet = writer.sheets['车辆通行证']
+    for i, col in enumerate(df.columns):
+        column_width = max(len(col) + 2, 15)  # 最小宽度为15
+        worksheet.set_column(i, i, column_width)
+    
+    # 添加说明sheet
+    instructions_data = {
+        '字段': ['车牌号', '车辆类型', '车主姓名', '所属部门', '备注'],
+        '说明': [
+            '车辆牌照号码（必填）',
+            '车辆类型，如：燃油、新能源（必填）',
+            '车主姓名（必填）',
+            '所属部门（必填）',
+            '备注信息（可选）'
+        ],
+        '是否必填': ['是', '是', '是', '是', '否']
+    }
+    
+    # 创建说明DataFrame
+    instructions_df = pd.DataFrame(instructions_data)
+    instructions_df.to_excel(writer, sheet_name='填写说明', index=False)
+    
+    # 设置说明sheet的列宽
+    instructions_worksheet = writer.sheets['填写说明']
+    instructions_worksheet.set_column(0, 0, 15)
+    instructions_worksheet.set_column(1, 1, 30)
+    instructions_worksheet.set_column(2, 2, 10)
+    
+    writer.close()
+    output.seek(0)
+    
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @bp.route('/batch_action', methods=['POST'])
 @login_required

@@ -269,6 +269,7 @@
                             <li>车型选项：货车、拖拉机、快递、其他</li>
                             <li>物流方式选项：公司自有车辆、物流公司车辆、外协车辆、其他车辆</li>
                             <li>出厂物品分类：{% if active_tab == 'outsourcing' %}外协{% else %}产成品交付{% endif %}、园区物料周转、其他</li>
+                            <li>重复数据处理：系统会根据出门证编号检查是否存在重复数据，如有更新则更新记录，无更新则跳过</li>
                             <li>请确保数据格式与模板一致</li>
                         </ul>
                     </div>
@@ -367,6 +368,16 @@ $(document).ready(function() {
                 
                 // 显示成功消息
                 var successMessage = '<div class="alert alert-success">' + response.message + '</div>';
+                
+                // 如果有错误详情，显示错误列表
+                if (response.errors && response.errors.length > 0) {
+                    successMessage += '<div class="alert alert-warning"><h6>导入过程中的警告：</h6><ul>';
+                    for (var i = 0; i < response.errors.length; i++) {
+                        successMessage += '<li>' + response.errors[i] + '</li>';
+                    }
+                    successMessage += '</ul></div>';
+                }
+                
                 $('#importResult').html(successMessage).show();
                 
                 // 3秒后刷新页面

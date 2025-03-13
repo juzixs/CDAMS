@@ -371,10 +371,34 @@ def import_records():
         
         # 开始导入数据
         success_count = 0
+        update_count = 0
+        skip_count = 0
         error_count = 0
+        
+        # 获取当前时间作为基准时间
+        base_time = datetime.now()
+        
+        # 创建一个临时列表存储所有记录，稍后一次性添加
+        records_to_add = []
+        records_to_update = []
         
         for index, row in df.iterrows():
             try:
+                # 获取出门证编号
+                certificate_number = row['出门证编号'] if not pd.isna(row['出门证编号']) else None
+                
+                # 如果出门证编号为空，则无法判断是否重复，直接添加新记录
+                if not certificate_number:
+                    error_rows.append(f'第{index+2}行: 出门证编号不能为空')
+                    error_count += 1
+                    continue
+                
+                # 查找是否存在相同出门证编号的记录
+                existing_record = VehicleExit.query.filter_by(
+                    certificate_number=certificate_number,
+                    exit_type=exit_type
+                ).first()
+                
                 # 处理日期字段
                 exit_time = pd.to_datetime(row['申请出厂日期']).to_pydatetime() if not pd.isna(row['申请出厂日期']) else None
                 confirmed_exit_time = pd.to_datetime(row['确认出厂日期']).to_pydatetime() if '确认出厂日期' in row and not pd.isna(row['确认出厂日期']) else None
@@ -386,7 +410,7 @@ def import_records():
                     '快递': 'express',
                     '其他': 'other'
                 }
-                vehicle_type = vehicle_type_map.get(row['车型'], 'other')
+                vehicle_type = vehicle_type_map.get(row['车型'], 'other') if '车型' in row and not pd.isna(row['车型']) else None
                 
                 # 处理物流方式
                 logistics_type_map = {
@@ -395,7 +419,7 @@ def import_records():
                     '外协车辆': 'outsourcing',
                     '其他车辆': 'other'
                 }
-                logistics_type = logistics_type_map.get(row['物流方式'], 'other')
+                logistics_type = logistics_type_map.get(row['物流方式'], 'other') if '物流方式' in row and not pd.isna(row['物流方式']) else None
                 
                 # 处理物品分类
                 item_category_map = {
@@ -404,53 +428,114 @@ def import_records():
                     '园区物料周转': 'material',
                     '其他': 'other'
                 }
-                item_category = item_category_map.get(row['出厂物品分类'], exit_type)
+                item_category = item_category_map.get(row['出厂物品分类'], exit_type) if '出厂物品分类' in row and not pd.isna(row['出厂物品分类']) else exit_type
                 
-                # 创建记录
-                record = VehicleExit(
-                    exit_type=exit_type,
-                    department=row['申请部门'] if not pd.isna(row['申请部门']) else None,
-                    initiator=row['发起人'] if not pd.isna(row['发起人']) else None,
-                    certificate_number=row['出门证编号'] if '出门证编号' in row and not pd.isna(row['出门证编号']) else None,
-                    plate_number=row['车牌号'] if '车牌号' in row and not pd.isna(row['车牌号']) else None,
-                    driver_name=row['司机姓名'] if '司机姓名' in row and not pd.isna(row['司机姓名']) else None,
-                    id_number=row['司机身份证号'] if '司机身份证号' in row and not pd.isna(row['司机身份证号']) else None,
-                    phone=row['司机联系电话'] if '司机联系电话' in row and not pd.isna(row['司机联系电话']) else None,
-                    vehicle_type=vehicle_type if '车型' in row and not pd.isna(row['车型']) else None,
-                    logistics_type=logistics_type if '物流方式' in row and not pd.isna(row['物流方式']) else None,
-                    logistics_company=row['物流公司名称'] if '物流公司名称' in row and not pd.isna(row['物流公司名称']) else None,
-                    logistics_number=row['物流单号'] if '物流单号' in row and not pd.isna(row['物流单号']) else None,
-                    company=row['接收单位'] if '接收单位' in row and not pd.isna(row['接收单位']) else None,
-                    item_category=item_category if '出厂物品分类' in row and not pd.isna(row['出厂物品分类']) else exit_type,
-                    destination=row['目的地'] if '目的地' in row and not pd.isna(row['目的地']) else None,
-                    items=row['出厂物品'] if '出厂物品' in row and not pd.isna(row['出厂物品']) else None,
-                    purpose=row['用途'] if '用途' in row and not pd.isna(row['用途']) else None,
-                    exit_time=exit_time,
-                    expected_return_time=None,  # 可以根据需要设置
-                    confirmed_exit_time=confirmed_exit_time,
-                    reviewer=row['审核人'] if '审核人' in row and not pd.isna(row['审核人']) else None,
-                    issuer=row['发放人'] if '发放人' in row and not pd.isna(row['发放人']) else None,
-                    approver_text=row['审批人'] if '审批人' in row and not pd.isna(row['审批人']) else None,
-                    guard=row['门卫'] if '门卫' in row and not pd.isna(row['门卫']) else None,
-                    remarks=row['备注'] if '备注' in row and not pd.isna(row['备注']) else None,
-                    created_by=current_user.id,
-                    status='completed',
-                    created_at=datetime.now(),
-                    updated_at=datetime.now()
-                )
+                # 根据Excel行号设置创建时间，确保顺序与Excel一致
+                created_time = base_time - pd.Timedelta(seconds=(len(df) - index))
                 
-                db.session.add(record)
-                success_count += 1
+                # 准备记录数据
+                record_data = {
+                    'exit_type': exit_type,
+                    'department': row['申请部门'] if not pd.isna(row['申请部门']) else None,
+                    'initiator': row['发起人'] if not pd.isna(row['发起人']) else None,
+                    'certificate_number': certificate_number,
+                    'plate_number': row['车牌号'] if '车牌号' in row and not pd.isna(row['车牌号']) else None,
+                    'driver_name': row['司机姓名'] if '司机姓名' in row and not pd.isna(row['司机姓名']) else None,
+                    'id_number': row['司机身份证号'] if '司机身份证号' in row and not pd.isna(row['司机身份证号']) else None,
+                    'phone': row['司机联系电话'] if '司机联系电话' in row and not pd.isna(row['司机联系电话']) else None,
+                    'vehicle_type': vehicle_type,
+                    'logistics_type': logistics_type,
+                    'logistics_company': row['物流公司名称'] if '物流公司名称' in row and not pd.isna(row['物流公司名称']) else None,
+                    'logistics_number': row['物流单号'] if '物流单号' in row and not pd.isna(row['物流单号']) else None,
+                    'company': row['接收单位'] if '接收单位' in row and not pd.isna(row['接收单位']) else None,
+                    'item_category': item_category,
+                    'destination': row['目的地'] if '目的地' in row and not pd.isna(row['目的地']) else None,
+                    'items': row['出厂物品'] if '出厂物品' in row and not pd.isna(row['出厂物品']) else None,
+                    'purpose': row['用途'] if '用途' in row and not pd.isna(row['用途']) else None,
+                    'exit_time': exit_time,
+                    'confirmed_exit_time': confirmed_exit_time,
+                    'reviewer': row['审核人'] if '审核人' in row and not pd.isna(row['审核人']) else None,
+                    'issuer': row['发放人'] if '发放人' in row and not pd.isna(row['发放人']) else None,
+                    'approver_text': row['审批人'] if '审批人' in row and not pd.isna(row['审批人']) else None,
+                    'guard': row['门卫'] if '门卫' in row and not pd.isna(row['门卫']) else None,
+                    'remarks': row['备注'] if '备注' in row and not pd.isna(row['备注']) else None,
+                }
+                
+                if existing_record:
+                    # 检查是否有更新
+                    has_updates = False
+                    for key, value in record_data.items():
+                        # 跳过出门证编号和出门类型的比较
+                        if key in ['certificate_number', 'exit_type']:
+                            continue
+                        
+                        # 获取现有记录的值
+                        existing_value = getattr(existing_record, key)
+                        
+                        # 对日期类型进行特殊处理
+                        if isinstance(existing_value, datetime) and value:
+                            # 只比较日期部分，忽略时间部分
+                            if existing_value.date() != value.date():
+                                has_updates = True
+                                break
+                        # 对其他类型进行普通比较
+                        elif existing_value != value and value is not None:
+                            has_updates = True
+                            break
+                    
+                    if has_updates:
+                        # 有更新，更新记录
+                        for key, value in record_data.items():
+                            # 只更新非空值
+                            if value is not None:
+                                setattr(existing_record, key, value)
+                        
+                        # 更新时间戳
+                        existing_record.updated_at = datetime.now()
+                        records_to_update.append(existing_record)
+                        update_count += 1
+                    else:
+                        # 没有更新，跳过
+                        skip_count += 1
+                else:
+                    # 不存在相同出门证编号的记录，创建新记录
+                    record = VehicleExit(
+                        **record_data,
+                        created_by=current_user.id,
+                        status='completed',
+                        created_at=created_time,
+                        updated_at=created_time
+                    )
+                    records_to_add.append(record)
+                    success_count += 1
             except Exception as e:
                 error_count += 1
                 print(f"导入第{index+2}行时出错: {str(e)}")
+                error_rows.append(f'第{index+2}行: 导入失败 - {str(e)}')
         
+        # 按照Excel顺序添加所有新记录
+        for record in records_to_add:
+            db.session.add(record)
+        
+        # 提交所有更改
         db.session.commit()
         
+        # 构建结果消息
+        result_message = f'导入完成: 成功导入{success_count}条新记录'
+        if update_count > 0:
+            result_message += f'，更新{update_count}条记录'
+        if skip_count > 0:
+            result_message += f'，跳过{skip_count}条重复记录'
+        if error_count > 0:
+            result_message += f'，失败{error_count}条记录'
+        
         return jsonify({
-            'message': f'导入完成: 成功导入{success_count}条记录，失败{error_count}条记录',
+            'message': result_message,
             'success_count': success_count,
-            'error_count': error_count
+            'update_count': update_count,
+            'skip_count': skip_count,
+            'error_count': error_count,
+            'errors': error_rows if error_rows else None
         })
     
     except Exception as e:
@@ -464,6 +549,7 @@ def export():
     search = request.args.get('search', '')
     year = request.args.get('year', '')
     month = request.args.get('month', '')
+    sort_order = request.args.get('sort_order', 'asc')  # 默认是升序（旧的在前）
     
     # 创建与index页面一致的查询条件
     query = VehicleExit.query.filter_by(exit_type=exit_type)
@@ -486,8 +572,11 @@ def export():
     if month:
         query = query.filter(db.extract('month', VehicleExit.exit_time) == int(month))
     
-    # 注意这里使用created_at升序（与展示页面相反）
-    records = query.order_by(VehicleExit.created_at.asc()).all()
+    # 根据排序参数决定排序方式
+    if sort_order == 'desc':
+        records = query.order_by(VehicleExit.created_at.desc()).all()
+    else:
+        records = query.order_by(VehicleExit.created_at.asc()).all()
     
     if not records:
         flash('没有符合条件的记录可导出', 'warning')
