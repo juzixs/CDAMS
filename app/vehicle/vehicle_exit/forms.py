@@ -30,7 +30,8 @@ class VehicleExitForm(FlaskForm):
     logistics_type = SelectField('物流方式', choices=[
         ('company', '公司自有车辆'),
         ('logistics', '物流公司车辆'),
-        ('outsourcing', '外协车辆')
+        ('outsourcing', '外协车辆'),
+        ('other', '其他车辆')
     ], validators=[Optional()])
     
     logistics_company = StringField('物流公司名称', validators=[Optional(), Length(max=100)])

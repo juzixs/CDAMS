@@ -23,7 +23,8 @@ def index():
     
     page = request.args.get('page', 1, type=int)
     search = request.args.get('search', '')
-    status = request.args.get('status', '')
+    year = request.args.get('year', '')
+    month = request.args.get('month', '')
     per_page = request.args.get('per_page', 10, type=int)
     
     query = VehicleExit.query.filter_by(exit_type=active_tab)
@@ -38,17 +39,50 @@ def index():
             )
         )
     
-    if status:
-        query = query.filter_by(status=status)
+    # 添加年份筛选
+    if year:
+        query = query.filter(db.extract('year', VehicleExit.exit_time) == int(year))
+    
+    # 添加月份筛选
+    if month:
+        query = query.filter(db.extract('month', VehicleExit.exit_time) == int(month))
     
     records = query.order_by(VehicleExit.created_at.desc()).paginate(page=page, per_page=per_page)
+    
+    # 获取所有不同的年份列表（包括所有数据的年份）
+    try:
+        # 首先尝试直接从数据库获取年份列表
+        available_years = []
+        
+        # 使用更安全的方式查询年份
+        years_query = db.session.query(
+            db.func.strftime('%Y', VehicleExit.exit_time)
+        ).filter(
+            VehicleExit.exit_time != None
+        ).distinct().all()
+        
+        # 提取年份并转为整数
+        available_years = [int(year[0]) for year in years_query if year[0] is not None and year[0].isdigit()]
+        available_years.sort(reverse=True)
+    except Exception as e:
+        # 如果查询出错，则使用一个基本的年份列表
+        current_year = datetime.now().year
+        available_years = list(range(current_year, current_year-5, -1))
+    
+    # 确保当前年份也在列表中
+    current_year = datetime.now().year
+    if not available_years or current_year not in available_years:
+        available_years.append(current_year)
+        available_years.sort(reverse=True)
     
     form = EmptyForm()
     
     return render_template('vehicle/vehicle_exit/index.html',
                           records=records,
                           form=form,
-                          active_tab=active_tab)
+                          active_tab=active_tab,
+                          now=datetime.now(),
+                          available_years=available_years)
 
 @bp.route('/add', methods=['GET', 'POST'])
 @login_required
