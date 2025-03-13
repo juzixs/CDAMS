@@ -24,6 +24,12 @@
                 </div>
                 
                 <div class="mb-3">
+                    {{ form.floor.label(class="form-label") }}
+                    {{ form.floor(class="form-control", required=true) }}
+                    <div class="form-text">楼层必填</div>
+                </div>
+                
+                <div class="mb-3">
                     {{ form.capacity.label(class="form-label") }}
                     {{ form.capacity(class="form-control", required=true, min=1) }}
                     <div class="form-text">容纳人数必填</div>
