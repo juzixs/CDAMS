@@ -53,8 +53,6 @@
                 <div class="col-md-4">
                     <select name="status" class="form-select">
                         <option value="">所有状态</option>
-                        <option value="pending" {% if request.args.get('status') == 'pending' %}selected{% endif %}>待审核</option>
-                        <option value="approved" {% if request.args.get('status') == 'approved' %}selected{% endif %}>已审核</option>
                         <option value="completed" {% if request.args.get('status') == 'completed' %}selected{% endif %}>已完成</option>
                     </select>
                 </div>
@@ -153,7 +151,7 @@
                             <td>{{ record.logistics_number or '-' }}</td>
                             <td>{{ record.reviewer or '-' }}</td>
                             <td>{{ record.issuer or '-' }}</td>
-                            <td>{{ record.approver or '-' }}</td>
+                            <td>{{ record.approver_text or '-' }}</td>
                             <td>{{ record.guard or '-' }}</td>
                             <td>{{ record.confirmed_exit_time.strftime('%Y-%m-%d') if record.confirmed_exit_time else '-' }}</td>
                             <td>{{ record.remarks or '-' }}</td>
@@ -165,16 +163,6 @@
                                     <button type="button" class="btn btn-sm btn-danger delete-record" data-id="{{ record.id }}">
                                         <i class="fas fa-trash"></i>
                                     </button>
-                                    {% if record.status == 'pending' and current_user.is_admin %}
-                                    <a href="{{ url_for('vehicle_exit.approve', id=record.id) }}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i>
-                                    </a>
-                                    {% endif %}
-                                    {% if record.status == 'approved' and not record.actual_return_time %}
-                                    <a href="{{ url_for('vehicle_exit.complete', id=record.id) }}" class="btn btn-sm btn-info">
-                                        <i class="fas fa-flag-checkered"></i>
-                                    </a>
-                                    {% endif %}
                                 </div>
                             </td>
                         </tr>

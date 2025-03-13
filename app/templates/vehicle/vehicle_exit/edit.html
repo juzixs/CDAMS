@@ -192,11 +192,11 @@
             </div>
             
             <div class="col-md-2">
-                <label for="approver_name" class="form-label">审批人</label>
-                {{ form.approver_name(class="form-control" + (" is-invalid" if form.approver_name.errors else ""), placeholder="审批人") }}
-                {% if form.approver_name.errors %}
+                <label for="approver_text" class="form-label">审批人</label>
+                {{ form.approver_text(class="form-control" + (" is-invalid" if form.approver_text.errors else ""), placeholder="审批人") }}
+                {% if form.approver_text.errors %}
                 <div class="invalid-feedback">
-                    {% for error in form.approver_name.errors %}
+                    {% for error in form.approver_text.errors %}
                     {{ error }}
                     {% endfor %}
                 </div>

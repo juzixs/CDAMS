@@ -98,19 +98,16 @@ def add():
             reviewer=form.reviewer.data,
             issuer=form.issuer.data,
             guard=form.guard.data,
+            approver_text=form.approver_text.data,
             
             # 其他信息
             remarks=form.remarks.data,
             created_by=current_user.id,
-            status='pending'
+            status='completed',
+            actual_return_time=datetime.utcnow()
         )
         
         db.session.add(exit_record)
-        
-        # 单独设置 approver_name 字段
-        if hasattr(exit_record, 'approver_name'):
-            exit_record.approver_name = form.approver_name.data
-        
         db.session.commit()
         
         flash(f'{"外协" if exit_type == "outsourcing" else "产成品"}车辆出门记录已添加', 'success')
@@ -163,13 +160,7 @@ def edit(id):
         # 审批信息
         form.reviewer.data = exit_record.reviewer
         form.issuer.data = exit_record.issuer
-        # 处理approver_name可能不存在的情况
-        if hasattr(exit_record, 'approver_name'):
-            form.approver_name.data = exit_record.approver_name
-        elif hasattr(exit_record, 'approver'):
-            form.approver_name.data = exit_record.approver
-        else:
-            form.approver_name.data = None
+        form.approver_text.data = exit_record.approver_text
         form.guard.data = exit_record.guard
         
         # 其他信息
@@ -211,9 +202,7 @@ def edit(id):
         # 审批信息
         exit_record.reviewer = form.reviewer.data
         exit_record.issuer = form.issuer.data
-        # 单独设置 approver_name 字段
-        if hasattr(exit_record, 'approver_name'):
-            exit_record.approver_name = form.approver_name.data
+        exit_record.approver_text = form.approver_text.data
         exit_record.guard = form.guard.data
         
         # 其他信息
@@ -241,35 +230,6 @@ def delete(id):
     
     flash(f'{"外协" if exit_type == "outsourcing" else "产成品"}车辆出门记录已删除', 'success')
     return redirect(url_for('vehicle_exit.index', tab=exit_type))
-
-@bp.route('/approve/<int:id>')
-@login_required
-@admin_required
-def approve(id):
-    """审核通过车辆出门记录"""
-    exit_record = VehicleExit.query.get_or_404(id)
-    
-    if exit_record.status == 'pending':
-        exit_record.status = 'approved'
-        exit_record.approved_by = current_user.id
-        db.session.commit()
-        flash('车辆出门记录已审核通过', 'success')
-    
-    return redirect(url_for('vehicle_exit.index', tab=exit_record.exit_type))
-
-@bp.route('/complete/<int:id>')
-@login_required
-def complete(id):
-    """完成车辆出门记录（标记为已返回）"""
-    exit_record = VehicleExit.query.get_or_404(id)
-    
-    if exit_record.status == 'approved':
-        exit_record.status = 'completed'
-        exit_record.actual_return_time = datetime.utcnow()
-        db.session.commit()
-        flash('车辆已标记为已返回', 'success')
-    
-    return redirect(url_for('vehicle_exit.index', tab=exit_record.exit_type))
 
 @bp.route('/batch_action', methods=['POST'])
 @login_required

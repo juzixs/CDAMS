@@ -39,7 +39,7 @@ class VehicleExit(db.Model):
     # 审批信息
     reviewer = db.Column(db.String(50), comment='审核人')
     issuer = db.Column(db.String(50), comment='发放人')
-    approver = db.Column(db.String(50), comment='审批人')
+    approver_text = db.Column(db.String(50), comment='审批人')
     guard = db.Column(db.String(50), comment='门卫')
     
     # 状态和备注
@@ -53,7 +53,7 @@ class VehicleExit(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
     
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_exits')
-    approver = db.relationship('User', foreign_keys=[approved_by], backref='approved_exits')
+    approver_user = db.relationship('User', foreign_keys=[approved_by], backref='approved_exits')
     
     def __repr__(self):
         return f'<VehicleExit {self.id} {self.plate_number}>' 
