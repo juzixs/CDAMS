@@ -37,7 +37,9 @@
                     <i class="fas fa-file-import"></i> 导入
                 </button>
                 <a href="{{ url_for('vehicle_exit.export', exit_type=active_tab, status=request.args.get('status', ''), 
-                                                search=request.args.get('search', '')) }}" 
+                                          search=request.args.get('search', ''), 
+                                          year=request.args.get('year', ''), 
+                                          month=request.args.get('month', '')) }}" 
                    class="btn btn-info">
                     <i class="fas fa-file-export"></i> 导出
                 </a>
@@ -76,6 +78,16 @@
                         <i class="fas fa-redo"></i> 重置
                     </a>
                 </div>
+                <div class="col-md-1">
+                    <a href="{{ url_for('vehicle_exit.index', tab=active_tab, 
+                                        search=request.args.get('search', ''), 
+                                        year=request.args.get('year', ''), 
+                                        month=request.args.get('month', ''),
+                                        sort_order=request.args.get('sort_order', 'desc')|reverse_order) }}" 
+                       class="btn btn-outline-secondary w-100" title="{{ '顺序显示' if request.args.get('sort_order') == 'desc' or not request.args.get('sort_order') else '逆序显示' }}">
+                        <i class="fas fa-{% if request.args.get('sort_order') == 'asc' %}sort-amount-down{% else %}sort-amount-up{% endif %}"></i>
+                    </a>
+                </div>
             </form>
         </div>
         
@@ -89,7 +101,6 @@
                     <thead>
                         <tr>
                             <th><input type="checkbox" id="selectAll"></th>
-                            <th>序号</th>
                             <th>申请部门</th>
                             <th>发起人</th>
                             <th>门证编号</th>
@@ -116,7 +127,6 @@
                         {% for record in records.items %}
                         <tr>
                             <td><input type="checkbox" name="record_ids[]" value="{{ record.id }}"></td>
-                            <td>{{ loop.index + (records.page - 1) * records.per_page }}</td>
                             <td>{{ record.department or '-' }}</td>
                             <td>{{ record.initiator or '-' }}</td>
                             <td>{{ record.certificate_number or '-' }}</td>
