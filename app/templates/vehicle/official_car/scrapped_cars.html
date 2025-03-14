@@ -53,7 +53,7 @@
                             <td class="d-none d-md-table-cell">{{ car.brand or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.asset_description or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.model or '-' }}</td>
-                            <td class="d-none d-xl-table-cell">{{ car.original_value or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ '%.2f'|format(car.original_value|float) if car.original_value else '-' }}</td>
                             <td class="d-none d-xl-table-cell">{{ car.is_business_car or '-' }}</td>
                             <td>{{ car.plate_number or '-' }}</td>
                             <td class="d-none d-md-table-cell">{{ car.car_model or '-' }}</td>

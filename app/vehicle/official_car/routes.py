@@ -386,7 +386,7 @@ def export_scrapped_cars():
             '品牌': car.brand,
             '资产描述': car.asset_description,
             '规格型号': car.model,
-            '原值': car.original_value,
+            '原值': '{:.2f}'.format(float(car.original_value)) if car.original_value else '',
             '经营用车': car.is_business_car,
             '车牌号': car.plate_number,
             '车辆型号': car.car_model,
