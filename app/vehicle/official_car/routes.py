@@ -199,6 +199,7 @@ def edit_car(car_id):
 def scrap_car(car_id):
     car = OfficialCar.query.get_or_404(car_id)
     car.status = CarStatus.scrapped
+    car.is_scrapped = True
     car.scrap_time = datetime.now()
     car.scrapped_by = current_user.id
     db.session.commit()
@@ -213,7 +214,7 @@ def scrapped_cars():
     search = request.args.get('search', '')
     
     # 构建查询
-    query = OfficialCar.query.filter_by(status=CarStatus.scrapped)
+    query = OfficialCar.query.filter_by(is_scrapped=True)
     
     if search:
         query = query.filter(
@@ -234,6 +235,19 @@ def scrapped_cars():
                           pagination=pagination,
                           page=page,
                           per_page=per_page)
+
+@bp.route('/return_car/<int:car_id>', methods=['POST'])
+@login_required
+def return_car(car_id):
+    car = OfficialCar.query.get_or_404(car_id)
+    car.status = CarStatus.idle  # 将状态设置为闲置
+    car.is_scrapped = False      # 取消报废标记
+    car.scrap_time = None        # 清除报废时间
+    car.updated_by = current_user.id
+    car.updated_at = datetime.now()
+    db.session.commit()
+    flash('车辆已退回到车辆信息列表', 'success')
+    return redirect(url_for('official_car.scrapped_cars'))
 
 @bp.route('/car_usage')
 @login_required

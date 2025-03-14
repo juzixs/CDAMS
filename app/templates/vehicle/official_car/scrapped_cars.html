@@ -16,30 +16,49 @@
             <h4 class="card-title fs-5">报废车辆列表</h4>
         </div>
         <div class="card-body">
-            {% if scrapped_cars %}
+            {% if cars %}
             <div class="table-responsive">
                 <table class="table table-striped table-hover table-sm">
                     <thead>
                         <tr>
                             <th>序号</th>
                             <th>资产编号</th>
+                            <th class="d-none d-md-table-cell">卡片编号</th>
                             <th class="d-none d-md-table-cell">品牌</th>
-                            <th>车牌号</th>
-                            <th class="d-none d-md-table-cell">报废时间</th>
-                            <th class="d-none d-md-table-cell">车辆牌照</th>
-                            <th class="d-none d-lg-table-cell">资产名称</th>
+                            <th class="d-none d-lg-table-cell">资产描述</th>
                             <th class="d-none d-lg-table-cell">规格型号</th>
-                            <th class="d-none d-lg-table-cell">原值</th>
+                            <th class="d-none d-xl-table-cell">原值</th>
+                            <th class="d-none d-xl-table-cell">经营用车</th>
+                            <th>车牌号</th>
+                            <th class="d-none d-md-table-cell">车辆型号</th>
+                            <th class="d-none d-lg-table-cell">登记时间</th>
+                            <th class="d-none d-lg-table-cell">座位数</th>
+                            <th class="d-none d-xl-table-cell">排气量</th>
+                            <th class="d-none d-lg-table-cell">责任人</th>
+                            <th class="d-none d-xl-table-cell">使用性质</th>
+                            <th class="d-none d-md-table-cell">车辆行驶证</th>
+                            <th class="d-none d-md-table-cell">报废时间</th>
+                            <th>操作</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for car in scrapped_cars %}
+                        {% for car in cars %}
                         <tr>
                             <td>{{ loop.index + (page - 1) * per_page }}</td>
                             <td>{{ car.asset_number }}</td>
+                            <td class="d-none d-md-table-cell">{{ car.card_number or '-' }}</td>
                             <td class="d-none d-md-table-cell">{{ car.brand or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.asset_description or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.model or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.original_value or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.is_business_car or '-' }}</td>
                             <td>{{ car.plate_number or '-' }}</td>
-                            <td class="d-none d-md-table-cell">{{ car.scrap_time.strftime('%Y-%m-%d') if car.scrap_time else '-' }}</td>
+                            <td class="d-none d-md-table-cell">{{ car.car_model or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.registration_time.strftime('%Y-%m-%d') if car.registration_time else '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.seat_count or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.displacement or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.responsible_person or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.usage_nature or '-' }}</td>
                             <td class="d-none d-md-table-cell">
                                 {% if car.vehicle_license %}
                                 <a href="{{ car.vehicle_license }}" target="_blank" class="btn btn-sm btn-info">
@@ -49,9 +68,15 @@
                                 -
                                 {% endif %}
                             </td>
-                            <td class="d-none d-lg-table-cell">{{ car.asset_description or '-' }}</td>
-                            <td class="d-none d-lg-table-cell">{{ car.model or '-' }}</td>
-                            <td class="d-none d-lg-table-cell">{{ car.original_value or '-' }}</td>
+                            <td class="d-none d-md-table-cell">{{ car.scrap_time.strftime('%Y-%m-%d') if car.scrap_time else '-' }}</td>
+                            <td>
+                                <form action="{{ url_for('official_car.return_car', car_id=car.id) }}" method="post" class="d-inline" onsubmit="return confirm('确定要将此车辆退回到车辆信息列表吗？');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-warning" title="退回">
+                                        <i class="fas fa-undo"></i>
+                                    </button>
+                                </form>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
