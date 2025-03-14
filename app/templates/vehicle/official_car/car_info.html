@@ -87,7 +87,7 @@
                             <td class="d-none d-lg-table-cell">{{ car.asset_description or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.model or '-' }}</td>
                             <td class="d-none d-xl-table-cell">{{ car.original_value or '-' }}</td>
-                            <td class="d-none d-xl-table-cell">{{ car.business_status or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.is_business_car or '-' }}</td>
                             <td>{{ car.plate_number or '-' }}</td>
                             <td class="d-none d-md-table-cell">{{ car.car_model or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.registration_time.strftime('%Y-%m-%d') if car.registration_time else '-' }}</td>
