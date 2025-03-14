@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid px-2 px-md-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-        <h1 class="mb-3 mb-md-0">公务车辆</h1>
+        <h1 class="mb-3 mb-md-0">车辆信息</h1>
         <div class="btn-group btn-group-sm btn-group-md-md">
             <a href="{{ url_for('official_car.add_car') }}" class="btn btn-primary">
                 <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">新增车辆</span>
@@ -11,65 +11,18 @@
             <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
                 <i class="fas fa-file-import"></i> <span class="d-none d-sm-inline">导入Excel</span>
             </button>
-            <a href="#" class="btn btn-info">
-                <i class="fas fa-file-export"></i> <span class="d-none d-sm-inline">导出Excel</span>
+            <a href="{{ url_for('official_car.index') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">返回首页</span>
             </a>
-        </div>
-    </div>
-
-    <!-- 主要功能卡片 -->
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-3 mb-4">
-        <div class="col">
-            <div class="card bg-primary text-white h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <i class="fas fa-car fa-3x mb-3"></i>
-                    <h5 class="card-title">车辆信息</h5>
-                    <p class="card-text text-center small">查看和管理所有车辆信息</p>
-                    <a href="{{ url_for('official_car.car_info') }}" class="btn btn-light btn-sm mt-auto">进入</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col">
-            <div class="card bg-success text-white h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <i class="fas fa-clipboard-list fa-3x mb-3"></i>
-                    <h5 class="card-title">车辆使用登记</h5>
-                    <p class="card-text text-center small">申请和查看车辆使用记录</p>
-                    <a href="{{ url_for('official_car.car_usage') }}" class="btn btn-light btn-sm mt-auto">进入</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col">
-            <div class="card bg-warning text-dark h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <i class="fas fa-tools fa-3x mb-3"></i>
-                    <h5 class="card-title">车辆维修保养</h5>
-                    <p class="card-text text-center small">申请和管理车辆维修保养</p>
-                    <a href="{{ url_for('official_car.car_maintenance') }}" class="btn btn-dark btn-sm mt-auto">进入</a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col">
-            <div class="card bg-info text-dark h-100">
-                <div class="card-body d-flex flex-column align-items-center">
-                    <i class="fas fa-gas-pump fa-3x mb-3"></i>
-                    <h5 class="card-title">车辆加油充值</h5>
-                    <p class="card-text text-center small">申请和记录车辆加油充值</p>
-                    <a href="{{ url_for('official_car.car_fuel') }}" class="btn btn-dark btn-sm mt-auto">进入</a>
-                </div>
-            </div>
         </div>
     </div>
 
     <div class="card mb-4">
         <div class="card-header">
-            <h4 class="card-title fs-5">车辆列表</h4>
+            <h4 class="card-title fs-5">车辆筛选</h4>
         </div>
         <div class="card-body">
-            <form method="get" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2 mb-4">
+            <form method="get" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2">
                 <div class="col">
                     <input type="text" name="search" class="form-control form-control-sm" placeholder="搜索资产编号/车牌号..." value="{{ request.args.get('search', '') }}">
                 </div>
@@ -79,7 +32,6 @@
                         <option value="normal" {% if request.args.get('status') == 'normal' %}selected{% endif %}>正常</option>
                         <option value="in_use" {% if request.args.get('status') == 'in_use' %}selected{% endif %}>使用中</option>
                         <option value="maintenance" {% if request.args.get('status') == 'maintenance' %}selected{% endif %}>维修中</option>
-                        <option value="scrapped" {% if request.args.get('status') == 'scrapped' %}selected{% endif %}>已报废</option>
                     </select>
                 </div>
                 <div class="col">
@@ -93,7 +45,14 @@
                     </a>
                 </div>
             </form>
+        </div>
+    </div>
 
+    <div class="card">
+        <div class="card-header">
+            <h4 class="card-title fs-5">车辆列表</h4>
+        </div>
+        <div class="card-body">
             {% if cars %}
             <div class="table-responsive">
                 <table class="table table-striped table-hover table-sm">
@@ -101,15 +60,20 @@
                         <tr>
                             <th>序号</th>
                             <th>资产编号</th>
+                            <th class="d-none d-md-table-cell">卡片编号</th>
                             <th class="d-none d-md-table-cell">品牌</th>
-                            <th class="d-none d-md-table-cell">资产描述</th>
+                            <th class="d-none d-lg-table-cell">资产描述</th>
                             <th class="d-none d-lg-table-cell">规格型号</th>
+                            <th class="d-none d-xl-table-cell">原值</th>
+                            <th class="d-none d-xl-table-cell">经营用车</th>
                             <th>车牌号</th>
+                            <th class="d-none d-md-table-cell">车辆型号</th>
+                            <th class="d-none d-lg-table-cell">登记时间</th>
                             <th class="d-none d-lg-table-cell">座位数</th>
-                            <th class="d-none d-lg-table-cell">经营用车</th>
-                            <th class="d-none d-lg-table-cell">使用性质</th>
+                            <th class="d-none d-xl-table-cell">排气量</th>
+                            <th class="d-none d-lg-table-cell">责任人</th>
+                            <th class="d-none d-xl-table-cell">使用性质</th>
                             <th class="d-none d-md-table-cell">车辆行驶证</th>
-                            <th>状态</th>
                             <th>操作</th>
                         </tr>
                     </thead>
@@ -118,13 +82,19 @@
                         <tr>
                             <td>{{ loop.index + (page - 1) * per_page }}</td>
                             <td>{{ car.asset_number }}</td>
+                            <td class="d-none d-md-table-cell">{{ car.card_number or '-' }}</td>
                             <td class="d-none d-md-table-cell">{{ car.brand or '-' }}</td>
-                            <td class="d-none d-md-table-cell">{{ car.asset_description or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.asset_description or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.model or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.original_value or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.business_status or '-' }}</td>
                             <td>{{ car.plate_number or '-' }}</td>
+                            <td class="d-none d-md-table-cell">{{ car.car_model or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.registration_time.strftime('%Y-%m-%d') if car.registration_time else '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.seat_count or '-' }}</td>
-                            <td class="d-none d-lg-table-cell">{{ car.is_business_car or '-' }}</td>
-                            <td class="d-none d-lg-table-cell">{{ car.usage_nature or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.displacement or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.responsible_person or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.usage_nature or '-' }}</td>
                             <td class="d-none d-md-table-cell">
                                 {% if car.vehicle_license %}
                                 <a href="{{ car.vehicle_license }}" target="_blank" class="btn btn-sm btn-info">
@@ -135,26 +105,15 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if car.status.name == 'normal' %}
-                                <span class="badge bg-success">正常</span>
-                                {% elif car.status.name == 'in_use' %}
-                                <span class="badge bg-primary">使用中</span>
-                                {% elif car.status.name == 'maintenance' %}
-                                <span class="badge bg-warning">维修中</span>
-                                {% elif car.status.name == 'scrapped' %}
-                                <span class="badge bg-danger">已报废</span>
-                                {% endif %}
-                            </td>
-                            <td>
                                 <div class="btn-group btn-group-sm">
-                                    <a href="{{ url_for('official_car.edit_car', car_id=car.id) }}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-edit"></i><span class="d-none d-lg-inline"> 编辑</span>
+                                    <a href="{{ url_for('official_car.edit_car', car_id=car.id) }}" class="btn btn-sm btn-primary" title="编辑">
+                                        <i class="fas fa-edit"></i>
                                     </a>
-                                    <a href="{{ url_for('official_car.use_car', car_id=car.id) }}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-car"></i><span class="d-none d-lg-inline"> 用车</span>
-                                    </a>
-                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#scrapModal{{ car.id }}">
-                                        <i class="fas fa-trash-alt"></i><span class="d-none d-lg-inline"> 报废</span>
+                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#scrapModal{{ car.id }}" title="报废">
+                                        <i class="fas fa-car-crash"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ car.id }}" title="删除">
+                                        <i class="fas fa-trash-alt"></i>
                                     </button>
                                 </div>
                                 
@@ -173,7 +132,29 @@
                                                 <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
                                                 <form action="{{ url_for('official_car.scrap_car', car_id=car.id) }}" method="post">
                                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                    <button type="submit" class="btn btn-danger btn-sm">确认报废</button>
+                                                    <button type="submit" class="btn btn-warning btn-sm">确认报废</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- 删除模态框 -->
+                                <div class="modal fade" id="deleteModal{{ car.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ car.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ car.id }}">确认删除车辆</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                确定要删除资产编号为 {{ car.asset_number }} 的车辆吗？此操作不可恢复！
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
+                                                <form action="{{ url_for('official_car.delete_car', car_id=car.id) }}" method="post">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger btn-sm">确认删除</button>
                                                 </form>
                                             </div>
                                         </div>
@@ -192,7 +173,7 @@
                 <ul class="pagination pagination-sm justify-content-center flex-wrap mt-3">
                     {% if page > 1 %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('official_car.index', page=page-1, **request.args) }}">上一页</a>
+                        <a class="page-link" href="{{ url_for('official_car.car_info', page=page-1, **request.args) }}">上一页</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">
@@ -202,13 +183,13 @@
                     
                     {% for p in range(1, pagination.pages + 1) %}
                     <li class="page-item {% if p == page %}active{% endif %}">
-                        <a class="page-link" href="{{ url_for('official_car.index', page=p, **request.args) }}">{{ p }}</a>
+                        <a class="page-link" href="{{ url_for('official_car.car_info', page=p, **request.args) }}">{{ p }}</a>
                     </li>
                     {% endfor %}
                     
                     {% if page < pagination.pages %}
                     <li class="page-item">
-                        <a class="page-link" href="{{ url_for('official_car.index', page=page+1, **request.args) }}">下一页</a>
+                        <a class="page-link" href="{{ url_for('official_car.car_info', page=page+1, **request.args) }}">下一页</a>
                     </li>
                     {% else %}
                     <li class="page-item disabled">

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>加油充值申请</h1>
+        <a href="{{ url_for('official_car.index') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> 返回首页
+        </a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>车辆信息</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <p><strong>资产编号：</strong> {{ car.asset_number }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>品牌：</strong> {{ car.brand or '-' }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>车牌号：</strong> {{ car.plate_number or '-' }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>规格型号：</strong> {{ car.model or '-' }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>排量：</strong> {{ car.displacement or '-' }}</p>
+                </div>
+                <div class="col-md-4">
+                    <p><strong>状态：</strong> {{ car.status.value }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="alert alert-info">
+                <h4 class="alert-heading">功能开发中</h4>
+                <p class="mb-0">车辆加油充值申请功能正在开发中，敬请期待...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
