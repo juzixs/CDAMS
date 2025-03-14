@@ -28,13 +28,13 @@
                     </div>
                     
                     <!-- 卡片编号 -->
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-lg-3">
                         <label for="card_number" class="form-label">卡片编号</label>
                         {{ form.card_number(class="form-control form-control-sm", id="card_number") }}
                     </div>
                     
                     <!-- 资产编号 -->
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-lg-3">
                         <label for="asset_number" class="form-label">资产编号 <span class="text-danger">*</span></label>
                         {{ form.asset_number(class="form-control form-control-sm", id="asset_number", required=true) }}
                         <div class="form-text small">必填项</div>
@@ -48,19 +48,19 @@
                     </div>
                     
                     <!-- 品牌 -->
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-lg-3">
                         <label for="brand" class="form-label">品牌</label>
                         {{ form.brand(class="form-control form-control-sm", id="brand") }}
                     </div>
                     
                     <!-- 资产描述 -->
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-lg-3">
                         <label for="asset_description" class="form-label">资产描述</label>
                         {{ form.asset_description(class="form-control form-control-sm", id="asset_description") }}
                     </div>
                     
                     <!-- 规格型号 -->
-                    <div class="col-12 col-md-6 col-lg-4">
+                    <div class="col-12 col-md-6 col-lg-3">
                         <label for="model" class="form-label">规格型号</label>
                         {{ form.model(class="form-control form-control-sm", id="model") }}
                     </div>
@@ -117,6 +117,12 @@
                     <div class="col-12 col-md-6 col-lg-3">
                         <label for="usage_nature" class="form-label">使用性质</label>
                         {{ form.usage_nature(class="form-control form-control-sm", id="usage_nature") }}
+                    </div>
+                    
+                    <!-- 车型 -->
+                    <div class="col-12 col-md-6 col-lg-3">
+                        <label for="car_type" class="form-label">车型</label>
+                        {{ form.car_type(class="form-control form-control-sm", id="car_type") }}
                     </div>
                     
                     <!-- 车辆行驶证 -->

@@ -110,6 +110,7 @@
                             <th class="d-none d-lg-table-cell">座位数</th>
                             <th class="d-none d-lg-table-cell">经营用车</th>
                             <th class="d-none d-lg-table-cell">使用性质</th>
+                            <th class="d-none d-lg-table-cell">车型</th>
                             <th>状态</th>
                             <th>操作</th>
                         </tr>
@@ -126,6 +127,7 @@
                             <td class="d-none d-lg-table-cell">{{ car.seat_count or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.is_business_car or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.usage_nature or '-' }}</td>
+                            <td class="d-none d-lg-table-cell">{{ car.car_type or '-' }}</td>
                             <td>
                                 {% if car.status.name == 'idle' %}
                                 <span class="badge bg-success">空闲</span>

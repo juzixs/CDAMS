@@ -78,6 +78,7 @@
                             <th class="d-none d-xl-table-cell">排气量</th>
                             <th class="d-none d-lg-table-cell">责任人</th>
                             <th class="d-none d-xl-table-cell">使用性质</th>
+                            <th class="d-none d-xl-table-cell">车型</th>
                             <th class="d-none d-md-table-cell">车辆行驶证</th>
                             <th>操作</th>
                         </tr>
@@ -100,6 +101,7 @@
                             <td class="d-none d-xl-table-cell">{{ car.displacement or '-' }}</td>
                             <td class="d-none d-lg-table-cell">{{ car.responsible_person or '-' }}</td>
                             <td class="d-none d-xl-table-cell">{{ car.usage_nature or '-' }}</td>
+                            <td class="d-none d-xl-table-cell">{{ car.car_type or '-' }}</td>
                             <td class="d-none d-md-table-cell">
                                 {% if car.vehicle_license %}
                                 <a href="{{ car.vehicle_license }}" target="_blank" class="btn btn-sm btn-info">

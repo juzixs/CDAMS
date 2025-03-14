@@ -14,6 +14,7 @@ class OfficialCarForm(FlaskForm):
     is_business_car = StringField('经营用车')
     plate_number = StringField('车牌号')
     car_model = StringField('车辆型号')
+    car_type = StringField('车型')
     registration_time = DateTimeField('登记时间', format='%Y-%m-%d', validators=[Optional()])
     seat_count = IntegerField('座位数', validators=[Optional(), NumberRange(min=1, message='座位数必须大于0')])
     displacement = StringField('排气量')

@@ -26,6 +26,7 @@ class OfficialCar(db.Model):
     business_status = db.Column(db.String(100), comment='使用状况')
     plate_number = db.Column(db.String(20), comment='车牌号')
     car_model = db.Column(db.String(100), comment='车辆型号')
+    car_type = db.Column(db.String(100), comment='车型')
     registration_time = db.Column(db.DateTime, comment='登记时间')
     seat_count = db.Column(db.Integer, comment='座位数')
     displacement = db.Column(db.String(50), comment='排气量')

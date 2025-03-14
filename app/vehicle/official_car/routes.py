@@ -35,6 +35,7 @@ def index():
             (OfficialCar.asset_description.ilike(f'%{search}%')) |
             (OfficialCar.model.ilike(f'%{search}%')) |
             (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.car_type.ilike(f'%{search}%')) |
             (OfficialCar.responsible_person.ilike(f'%{search}%')) |
             (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
@@ -85,6 +86,7 @@ def car_info():
             (OfficialCar.asset_description.ilike(f'%{search}%')) |
             (OfficialCar.model.ilike(f'%{search}%')) |
             (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.car_type.ilike(f'%{search}%')) |
             (OfficialCar.responsible_person.ilike(f'%{search}%')) |
             (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
@@ -132,6 +134,7 @@ def add_car():
             is_business_car=form.is_business_car.data,
             plate_number=form.plate_number.data,
             car_model=form.car_model.data,
+            car_type=form.car_type.data,
             registration_time=form.registration_time.data,
             seat_count=form.seat_count.data,
             displacement=form.displacement.data,
@@ -142,7 +145,7 @@ def add_car():
         )
         
         # 处理车辆照片上传
-        if form.vehicle_license.data:
+        if form.vehicle_license.data and hasattr(form.vehicle_license.data, 'filename'):
             filename = secure_filename(form.vehicle_license.data.filename)
             # 生成唯一文件名
             unique_filename = f"{uuid.uuid4().hex}_{filename}"
@@ -185,6 +188,7 @@ def edit_car(car_id):
         car.is_business_car = form.is_business_car.data
         car.plate_number = form.plate_number.data
         car.car_model = form.car_model.data
+        car.car_type = form.car_type.data
         car.registration_time = form.registration_time.data
         car.seat_count = form.seat_count.data
         car.displacement = form.displacement.data
@@ -194,7 +198,7 @@ def edit_car(car_id):
         car.updated_at = datetime.now()
         
         # 处理车辆照片上传
-        if form.vehicle_license.data:
+        if form.vehicle_license.data and hasattr(form.vehicle_license.data, 'filename'):
             # 如果已有照片，尝试删除旧文件
             if car.vehicle_license:
                 old_file_path = os.path.join(os.getcwd(), 'app', car.vehicle_license.lstrip('/'))
@@ -256,6 +260,7 @@ def scrapped_cars():
             (OfficialCar.asset_description.ilike(f'%{search}%')) |
             (OfficialCar.model.ilike(f'%{search}%')) |
             (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.car_type.ilike(f'%{search}%')) |
             (OfficialCar.responsible_person.ilike(f'%{search}%')) |
             (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
@@ -391,6 +396,7 @@ def import_cars():
                         is_business_car=row.get('是否为公务车') if not pd.isna(row.get('是否为公务车', '')) else None,
                         plate_number=row.get('车牌号') if not pd.isna(row.get('车牌号', '')) else None,
                         car_model=row.get('车型') if not pd.isna(row.get('车型', '')) else None,
+                        car_type=row.get('车型') if not pd.isna(row.get('车型', '')) else None,
                         registration_time=row.get('注册登记时间') if not pd.isna(row.get('注册登记时间', '')) else None,
                         seat_count=row.get('座位数') if not pd.isna(row.get('座位数', '')) else None,
                         displacement=row.get('排量') if not pd.isna(row.get('排量', '')) else None,
