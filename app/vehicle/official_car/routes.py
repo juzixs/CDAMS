@@ -18,23 +18,36 @@ def index():
     per_page = 10
     
     # 获取查询参数
-    status = request.args.get('status', '')
+    usage_nature = request.args.get('usage_nature', '')
     search = request.args.get('search', '')
     
     # 构建查询
     query = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped)
     
-    if status:
-        query = query.filter(OfficialCar.status == CarStatus[status])
+    if usage_nature:
+        query = query.filter(OfficialCar.usage_nature == usage_nature)
     
     if search:
         query = query.filter(
             (OfficialCar.asset_number.ilike(f'%{search}%')) |
-            (OfficialCar.plate_number.ilike(f'%{search}%'))
+            (OfficialCar.plate_number.ilike(f'%{search}%')) |
+            (OfficialCar.brand.ilike(f'%{search}%')) |
+            (OfficialCar.asset_description.ilike(f'%{search}%')) |
+            (OfficialCar.model.ilike(f'%{search}%')) |
+            (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.responsible_person.ilike(f'%{search}%')) |
+            (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
     
     # 按添加时间升序排序（新添加的在下）
     query = query.order_by(OfficialCar.created_at)
+    
+    # 获取所有唯一的使用性质
+    all_usage_natures = db.session.query(OfficialCar.usage_nature).filter(
+        OfficialCar.usage_nature.isnot(None),
+        OfficialCar.usage_nature != ''
+    ).distinct().order_by(OfficialCar.usage_nature).all()
+    usage_natures = [nature[0] for nature in all_usage_natures if nature[0]]
     
     # 分页
     pagination = query.paginate(page=page, per_page=per_page)
@@ -45,7 +58,8 @@ def index():
                           cars=cars,
                           pagination=pagination,
                           page=page,
-                          per_page=per_page)
+                          per_page=per_page,
+                          usage_natures=usage_natures)
 
 @bp.route('/car_info')
 @login_required
@@ -54,23 +68,36 @@ def car_info():
     per_page = 10
     
     # 获取查询参数
-    status = request.args.get('status', '')
+    usage_nature = request.args.get('usage_nature', '')
     search = request.args.get('search', '')
     
     # 构建查询
     query = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped)
     
-    if status:
-        query = query.filter(OfficialCar.status == CarStatus[status])
+    if usage_nature:
+        query = query.filter(OfficialCar.usage_nature == usage_nature)
     
     if search:
         query = query.filter(
             (OfficialCar.asset_number.ilike(f'%{search}%')) |
-            (OfficialCar.plate_number.ilike(f'%{search}%'))
+            (OfficialCar.plate_number.ilike(f'%{search}%')) |
+            (OfficialCar.brand.ilike(f'%{search}%')) |
+            (OfficialCar.asset_description.ilike(f'%{search}%')) |
+            (OfficialCar.model.ilike(f'%{search}%')) |
+            (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.responsible_person.ilike(f'%{search}%')) |
+            (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
     
     # 按添加时间升序排序（新添加的在下）
     query = query.order_by(OfficialCar.created_at)
+    
+    # 获取所有唯一的使用性质
+    all_usage_natures = db.session.query(OfficialCar.usage_nature).filter(
+        OfficialCar.usage_nature.isnot(None),
+        OfficialCar.usage_nature != ''
+    ).distinct().order_by(OfficialCar.usage_nature).all()
+    usage_natures = [nature[0] for nature in all_usage_natures if nature[0]]
     
     # 分页
     pagination = query.paginate(page=page, per_page=per_page)
@@ -81,7 +108,8 @@ def car_info():
                           cars=cars,
                           pagination=pagination,
                           page=page,
-                          per_page=per_page)
+                          per_page=per_page,
+                          usage_natures=usage_natures)
 
 @bp.route('/add_car', methods=['GET', 'POST'])
 @login_required
@@ -212,15 +240,32 @@ def scrapped_cars():
     page = request.args.get('page', 1, type=int)
     per_page = 10
     search = request.args.get('search', '')
+    usage_nature = request.args.get('usage_nature', '')
     
     # 构建查询
     query = OfficialCar.query.filter_by(is_scrapped=True)
     
+    if usage_nature:
+        query = query.filter(OfficialCar.usage_nature == usage_nature)
+    
     if search:
         query = query.filter(
             (OfficialCar.asset_number.ilike(f'%{search}%')) |
-            (OfficialCar.plate_number.ilike(f'%{search}%'))
+            (OfficialCar.plate_number.ilike(f'%{search}%')) |
+            (OfficialCar.brand.ilike(f'%{search}%')) |
+            (OfficialCar.asset_description.ilike(f'%{search}%')) |
+            (OfficialCar.model.ilike(f'%{search}%')) |
+            (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.responsible_person.ilike(f'%{search}%')) |
+            (OfficialCar.usage_nature.ilike(f'%{search}%'))
         )
+    
+    # 获取所有唯一的使用性质
+    all_usage_natures = db.session.query(OfficialCar.usage_nature).filter(
+        OfficialCar.usage_nature.isnot(None),
+        OfficialCar.usage_nature != ''
+    ).distinct().order_by(OfficialCar.usage_nature).all()
+    usage_natures = [nature[0] for nature in all_usage_natures if nature[0]]
     
     # 按报废时间升序排序（新报废的在下）
     query = query.order_by(OfficialCar.scrap_time)
@@ -234,7 +279,8 @@ def scrapped_cars():
                           cars=cars,
                           pagination=pagination,
                           page=page,
-                          per_page=per_page)
+                          per_page=per_page,
+                          usage_natures=usage_natures)
 
 @bp.route('/return_car/<int:car_id>', methods=['POST'])
 @login_required
@@ -441,4 +487,24 @@ def export_scrapped_cars():
             worksheet.set_column(idx, idx, column_width + 2)
     
     # 发送文件
-    return send_file(temp_file_path, as_attachment=True, download_name=filename) 
+    return send_file(temp_file_path, as_attachment=True, download_name=filename)
+
+@bp.route('/change_status/<int:car_id>', methods=['POST'])
+@login_required
+def change_status(car_id):
+    car = OfficialCar.query.get_or_404(car_id)
+    status = request.form.get('status')
+    
+    # 验证状态是否有效
+    if status not in [s.name for s in CarStatus]:
+        flash('无效的状态', 'danger')
+        return redirect(url_for('official_car.index'))
+    
+    # 更新车辆状态
+    car.status = CarStatus[status]
+    car.updated_by = current_user.id
+    car.updated_at = datetime.now()
+    db.session.commit()
+    
+    flash(f'车辆状态已更新为 {CarStatus[status].value}', 'success')
+    return redirect(url_for('official_car.index')) 

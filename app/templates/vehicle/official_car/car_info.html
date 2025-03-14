@@ -22,24 +22,29 @@
             <h4 class="card-title fs-5">车辆筛选</h4>
         </div>
         <div class="card-body">
-            <form method="get" class="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-2">
-                <div class="col">
-                    <input type="text" name="search" class="form-control form-control-sm" placeholder="搜索资产编号/车牌号..." value="{{ request.args.get('search', '') }}">
+            <form method="get" class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-2">
+                <div class="col-md-3">
+                    <input type="text" name="search" class="form-control form-control-sm" placeholder="搜索车辆信息..." value="{{ request.args.get('search', '') }}">
                 </div>
-                <div class="col">
-                    <select name="status" class="form-select form-select-sm">
-                        <option value="">所有状态</option>
-                        <option value="normal" {% if request.args.get('status') == 'normal' %}selected{% endif %}>正常</option>
-                        <option value="in_use" {% if request.args.get('status') == 'in_use' %}selected{% endif %}>使用中</option>
-                        <option value="maintenance" {% if request.args.get('status') == 'maintenance' %}selected{% endif %}>维修中</option>
+                <div class="col-md-3">
+                    <select name="usage_nature" class="form-select form-select-sm">
+                        <option value="">所有使用性质</option>
+                        {% for nature in usage_natures %}
+                        <option value="{{ nature }}" {% if request.args.get('usage_nature') == nature %}selected{% endif %}>{{ nature }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div class="col">
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-secondary btn-sm w-100">
                         <i class="fas fa-search"></i> 搜索
                     </button>
                 </div>
-                <div class="col">
+                <div class="col-md-2">
+                    <a href="{{ url_for('official_car.car_info') }}" class="btn btn-secondary btn-sm w-100">
+                        <i class="fas fa-undo"></i> 重置
+                    </a>
+                </div>
+                <div class="col-md-2">
                     <a href="{{ url_for('official_car.scrapped_cars') }}" class="btn btn-secondary btn-sm w-100">
                         <i class="fas fa-trash-alt"></i> 查看报废车辆
                     </a>
