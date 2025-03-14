@@ -33,8 +33,8 @@ def index():
             (OfficialCar.plate_number.ilike(f'%{search}%'))
         )
     
-    # 按添加时间降序排序
-    query = query.order_by(desc(OfficialCar.created_at))
+    # 按添加时间升序排序（新添加的在下）
+    query = query.order_by(OfficialCar.created_at)
     
     # 分页
     pagination = query.paginate(page=page, per_page=per_page)
@@ -69,8 +69,8 @@ def car_info():
             (OfficialCar.plate_number.ilike(f'%{search}%'))
         )
     
-    # 按添加时间降序排序
-    query = query.order_by(desc(OfficialCar.created_at))
+    # 按添加时间升序排序（新添加的在下）
+    query = query.order_by(OfficialCar.created_at)
     
     # 分页
     pagination = query.paginate(page=page, per_page=per_page)
@@ -222,8 +222,8 @@ def scrapped_cars():
             (OfficialCar.plate_number.ilike(f'%{search}%'))
         )
     
-    # 按报废时间降序排序
-    query = query.order_by(desc(OfficialCar.scrap_time))
+    # 按报废时间升序排序（新报废的在下）
+    query = query.order_by(OfficialCar.scrap_time)
     
     # 分页
     pagination = query.paginate(page=page, per_page=per_page)
@@ -374,8 +374,8 @@ def import_cars():
 @bp.route('/export_scrapped_cars')
 @login_required
 def export_scrapped_cars():
-    # 查询所有报废车辆
-    cars = OfficialCar.query.filter_by(is_scrapped=True).order_by(desc(OfficialCar.scrap_time)).all()
+    # 查询所有报废车辆，按报废时间升序排序
+    cars = OfficialCar.query.filter_by(is_scrapped=True).order_by(OfficialCar.scrap_time).all()
     
     # 创建DataFrame
     data = []
