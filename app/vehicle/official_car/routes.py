@@ -130,7 +130,7 @@ def add_car():
         db.session.add(car)
         db.session.commit()
         flash('车辆信息添加成功', 'success')
-        return redirect(url_for('official_car.index'))
+        return redirect(url_for('official_car.car_info'))
     
     return render_template('vehicle/official_car/add_car.html', title='新增车辆', form=form)
 
@@ -190,7 +190,7 @@ def edit_car(car_id):
         
         db.session.commit()
         flash('车辆信息更新成功', 'success')
-        return redirect(url_for('official_car.index'))
+        return redirect(url_for('official_car.car_info'))
     
     return render_template('vehicle/official_car/edit_car.html', title='编辑车辆', form=form, car=car)
 
