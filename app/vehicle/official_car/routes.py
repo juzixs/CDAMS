@@ -101,7 +101,6 @@ def add_car():
             asset_description=form.asset_description.data,
             model=form.model.data,
             original_value=form.original_value.data,
-            business_status=form.business_status.data,
             is_business_car=form.is_business_car.data,
             plate_number=form.plate_number.data,
             car_model=form.car_model.data,
@@ -155,7 +154,6 @@ def edit_car(car_id):
         car.asset_description = form.asset_description.data
         car.model = form.model.data
         car.original_value = form.original_value.data
-        car.business_status = form.business_status.data
         car.is_business_car = form.is_business_car.data
         car.plate_number = form.plate_number.data
         car.car_model = form.car_model.data
@@ -330,7 +328,6 @@ def import_cars():
                         asset_description=row.get('资产名称') if not pd.isna(row.get('资产名称', '')) else None,
                         model=row.get('规格型号') if not pd.isna(row.get('规格型号', '')) else None,
                         original_value=row.get('原值') if not pd.isna(row.get('原值', '')) else None,
-                        business_status=row.get('使用状况') if not pd.isna(row.get('使用状况', '')) else None,
                         is_business_car=row.get('是否为公务车') if not pd.isna(row.get('是否为公务车', '')) else None,
                         plate_number=row.get('车牌号') if not pd.isna(row.get('车牌号', '')) else None,
                         car_model=row.get('车型') if not pd.isna(row.get('车型', '')) else None,

@@ -12,7 +12,6 @@ class OfficialCarForm(FlaskForm):
     model = StringField('规格型号')
     original_value = FloatField('原值', validators=[Optional()])
     is_business_car = StringField('经营用车')
-    business_status = StringField('使用状况')
     plate_number = StringField('车牌号')
     car_model = StringField('车辆型号')
     registration_time = DateTimeField('登记时间', format='%Y-%m-%d', validators=[Optional()])

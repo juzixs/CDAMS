@@ -109,11 +109,11 @@
                                     <a href="{{ url_for('official_car.edit_car', car_id=car.id) }}" class="btn btn-sm btn-primary" title="编辑">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#scrapModal{{ car.id }}" title="报废">
-                                        <i class="fas fa-car-crash"></i>
-                                    </button>
                                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ car.id }}" title="删除">
                                         <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#scrapModal{{ car.id }}" title="报废">
+                                        <i class="fas fa-car-crash"></i>
                                     </button>
                                 </div>
                                 
