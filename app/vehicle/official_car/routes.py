@@ -369,4 +369,47 @@ def import_cars():
     else:
         flash('只支持 .xlsx 或 .xls 文件格式', 'danger')
     
-    return redirect(url_for('official_car.index')) 
+    return redirect(url_for('official_car.index'))
+
+@bp.route('/export_scrapped_cars')
+@login_required
+def export_scrapped_cars():
+    # 查询所有报废车辆
+    cars = OfficialCar.query.filter_by(is_scrapped=True).order_by(desc(OfficialCar.scrap_time)).all()
+    
+    # 创建DataFrame
+    data = []
+    for car in cars:
+        data.append({
+            '资产编号': car.asset_number,
+            '卡片编号': car.card_number,
+            '品牌': car.brand,
+            '资产描述': car.asset_description,
+            '规格型号': car.model,
+            '原值': car.original_value,
+            '经营用车': car.is_business_car,
+            '车牌号': car.plate_number,
+            '车辆型号': car.car_model,
+            '登记时间': car.registration_time.strftime('%Y-%m-%d') if car.registration_time else '',
+            '座位数': car.seat_count,
+            '排气量': car.displacement,
+            '责任人': car.responsible_person,
+            '使用性质': car.usage_nature,
+            '报废时间': car.scrap_time.strftime('%Y-%m-%d') if car.scrap_time else ''
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # 创建临时文件
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    filename = f'报废车辆信息_{timestamp}.xlsx'
+    temp_file_path = os.path.join(os.getcwd(), 'app', 'static', 'temp', filename)
+    
+    # 确保目录存在
+    os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+    
+    # 导出到Excel
+    df.to_excel(temp_file_path, index=False)
+    
+    # 发送文件
+    return send_file(temp_file_path, as_attachment=True, download_name=filename) 
