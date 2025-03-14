@@ -408,8 +408,37 @@ def export_scrapped_cars():
     # 确保目录存在
     os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
     
-    # 导出到Excel
-    df.to_excel(temp_file_path, index=False)
+    # 使用ExcelWriter添加标题
+    with pd.ExcelWriter(temp_file_path, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='报废车辆信息', index=False, startrow=2)  # 从第3行开始写入数据
+        
+        # 获取工作簿和工作表对象
+        workbook = writer.book
+        worksheet = writer.sheets['报废车辆信息']
+        
+        # 设置标题格式
+        title_format = workbook.add_format({
+            'bold': True,
+            'font_size': 16,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        
+        # 合并单元格并写入标题
+        worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '报废车辆信息', title_format)
+        
+        # 添加导出时间
+        date_format = workbook.add_format({
+            'align': 'right',
+            'font_size': 10
+        })
+        export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+        worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+        
+        # 自动调整列宽
+        for idx, col in enumerate(df.columns):
+            column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+            worksheet.set_column(idx, idx, column_width + 2)
     
     # 发送文件
     return send_file(temp_file_path, as_attachment=True, download_name=filename) 
