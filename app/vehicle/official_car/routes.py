@@ -2,11 +2,11 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, s
 from flask_login import login_required, current_user
 from app import db
 from app.vehicle.official_car import bp
-from app.models.official_car import OfficialCar, CarStatus
-from app.vehicle.official_car.forms import OfficialCarForm
+from app.models.official_car import OfficialCar, CarStatus, CarUsageRecord
+from app.vehicle.official_car.forms import OfficialCarForm, CarUsageRecordForm, CarReturnForm, CarUsageRecordFullForm
 from werkzeug.utils import secure_filename
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, time
 import pandas as pd
 import uuid
 from sqlalchemy import desc
@@ -287,23 +287,134 @@ def scrapped_cars():
                           per_page=per_page,
                           usage_natures=usage_natures)
 
-@bp.route('/return_car/<int:car_id>', methods=['POST'])
+def calculate_usage_duration(departure_date, departure_time, return_time):
+    """
+    根据出车时间和收车时间计算使用时长
+    
+    计算规则：
+    1. 同一天出车和收车：按小时计算，显示为"XH"
+    2. 跨天出车和收车：按天数计算，精确到小数点后两位，显示为"X.XX天"
+    """
+    # 确保departure_date是date类型
+    if isinstance(departure_date, datetime):
+        departure_date = departure_date.date()
+    
+    # 创建出车的完整日期时间
+    departure_datetime = datetime.combine(departure_date, departure_time)
+    
+    # 获取收车日期（从return_time中提取）
+    return_date = return_time.date()
+    
+    # 计算时间差（总秒数）
+    time_diff_seconds = (return_time - departure_datetime).total_seconds()
+    
+    # 计算天数差（包括小数部分）
+    days_diff = time_diff_seconds / (24 * 3600)
+    
+    # 计算小时差
+    hours_diff = time_diff_seconds / 3600
+    
+    # 根据规则计算使用时长
+    if return_date == departure_date:
+        # 同一天出车和收车，按小时计算
+        return f"{int(hours_diff)}H"
+    else:
+        # 跨天出车和收车，按天数计算（精确到小数点后两位）
+        return f"{days_diff:.2f}天"
+
+@bp.route('/return_car/<int:record_id>', methods=['GET', 'POST'])
 @login_required
-def return_car(car_id):
-    car = OfficialCar.query.get_or_404(car_id)
-    car.status = CarStatus.idle  # 将状态设置为闲置
-    car.is_scrapped = False      # 取消报废标记
-    car.scrap_time = None        # 清除报废时间
-    car.updated_by = current_user.id
-    car.updated_at = datetime.now()
-    db.session.commit()
-    flash('车辆已退回到车辆信息列表', 'success')
-    return redirect(url_for('official_car.scrapped_cars'))
+def return_car(record_id):
+    record = CarUsageRecord.query.get_or_404(record_id)
+    car = OfficialCar.query.get_or_404(record.car_id)
+    form = CarReturnForm()
+    
+    if form.validate_on_submit():
+        record.return_time = form.return_time.data
+        record.return_mileage = form.return_mileage.data
+        record.refueling = form.refueling.data
+        record.maintenance = form.maintenance.data
+        # 如果表单中没有提供toll_fee，则默认设置为'etc'
+        record.toll_fee = form.toll_fee.data or 'etc'
+        record.parking_fee = form.parking_fee.data
+        record.accident_violation = form.accident_violation.data
+        
+        # 计算使用时长
+        record.usage_duration = calculate_usage_duration(
+            record.departure_date, 
+            record.departure_time, 
+            form.return_time.data
+        )
+        
+        # 更新车辆状态为空闲
+        car.status = CarStatus.idle
+        
+        db.session.commit()
+        flash('车辆归还成功！', 'success')
+        return redirect(url_for('vehicle.official_car.car_usage'))
+    
+    return render_template('vehicle/official_car/return_car.html', form=form, record=record, car=car)
 
 @bp.route('/car_usage')
 @login_required
 def car_usage():
-    return render_template('vehicle/official_car/car_usage.html', title='车辆使用登记')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # 获取查询参数
+    year = request.args.get('year', '')
+    plate_number = request.args.get('plate_number', '')
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarUsageRecord.query
+    
+    if year:
+        query = query.filter(db.extract('year', CarUsageRecord.departure_date) == year)
+    
+    if plate_number:
+        query = query.filter(CarUsageRecord.plate_number == plate_number)
+    
+    if search:
+        query = query.filter(
+            (CarUsageRecord.department.ilike(f'%{search}%')) |
+            (CarUsageRecord.plate_number.ilike(f'%{search}%')) |
+            (CarUsageRecord.destination_purpose.ilike(f'%{search}%')) |
+            (CarUsageRecord.driver.ilike(f'%{search}%')) |
+            (CarUsageRecord.passengers.ilike(f'%{search}%')) |
+            (CarUsageRecord.maintenance.ilike(f'%{search}%')) |
+            (CarUsageRecord.accident_violation.ilike(f'%{search}%'))
+        )
+    
+    # 按出车日期和时间降序排序（新记录在上），相同日期和时间的按创建时间降序排序（新创建的在上）
+    query = query.order_by(
+        CarUsageRecord.departure_date.desc(), 
+        CarUsageRecord.departure_time.desc(),
+        CarUsageRecord.created_at.desc()
+    )
+    
+    # 获取所有年份
+    all_years = db.session.query(db.extract('year', CarUsageRecord.departure_date)).distinct().order_by(db.extract('year', CarUsageRecord.departure_date).desc()).all()
+    years = [int(year[0]) for year in all_years if year[0]]
+    
+    # 获取所有车牌号
+    all_plate_numbers = db.session.query(CarUsageRecord.plate_number).distinct().order_by(CarUsageRecord.plate_number).all()
+    plate_numbers = [pn[0] for pn in all_plate_numbers if pn[0]]
+    
+    # 分页
+    pagination = query.paginate(page=page, per_page=per_page)
+    records = pagination.items
+    
+    return render_template('vehicle/official_car/car_usage.html', 
+                          title='车辆使用登记',
+                          records=records,
+                          pagination=pagination,
+                          page=page,
+                          per_page=per_page,
+                          years=years,
+                          plate_numbers=plate_numbers,
+                          current_year=year,
+                          current_plate_number=plate_number)
 
 @bp.route('/car_maintenance')
 @login_required
@@ -315,11 +426,45 @@ def car_maintenance():
 def car_fuel():
     return render_template('vehicle/official_car/car_fuel.html', title='车辆加油充值')
 
-@bp.route('/use_car/<int:car_id>')
+@bp.route('/use_car/<int:car_id>', methods=['GET', 'POST'])
 @login_required
 def use_car(car_id):
     car = OfficialCar.query.get_or_404(car_id)
-    return render_template('vehicle/official_car/use_car.html', title='用车申请', car=car)
+    form = CarUsageRecordForm()
+    
+    if form.validate_on_submit():
+        # 创建新的用车记录
+        record = CarUsageRecord(
+            car_id=car.id,
+            department=form.department.data,
+            plate_number=car.plate_number,
+            departure_date=form.departure_date.data,
+            departure_time=datetime.strptime(form.departure_time.data, '%H:%M').time(),
+            departure_mileage=form.departure_mileage.data,
+            destination_purpose=form.destination_purpose.data,
+            driver=form.driver.data,
+            passengers=form.passengers.data,
+            created_by=current_user.id
+        )
+        
+        # 更新车辆状态为派出
+        car.status = CarStatus.dispatched
+        car.updated_by = current_user.id
+        car.updated_at = datetime.now()
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        flash('用车申请已提交，车辆状态已更新为派出', 'success')
+        return redirect(url_for('official_car.car_usage'))
+    
+    # 预填充车牌号
+    form.plate_number.data = car.plate_number
+    
+    return render_template('vehicle/official_car/use_car.html', 
+                          title='用车申请', 
+                          form=form, 
+                          car=car)
 
 @bp.route('/maintain_car/<int:car_id>')
 @login_required
@@ -513,4 +658,344 @@ def change_status(car_id):
     db.session.commit()
     
     flash(f'车辆状态已更新为 {CarStatus[status].value}', 'success')
-    return redirect(url_for('official_car.index')) 
+    return redirect(url_for('official_car.index'))
+
+@bp.route('/restore_car/<int:car_id>', methods=['POST'])
+@login_required
+def restore_car(car_id):
+    car = OfficialCar.query.get_or_404(car_id)
+    car.status = CarStatus.idle  # 将状态设置为闲置
+    car.is_scrapped = False      # 取消报废标记
+    car.scrap_time = None        # 清除报废时间
+    car.updated_by = current_user.id
+    car.updated_at = datetime.now()
+    db.session.commit()
+    flash('车辆已退回到车辆信息列表', 'success')
+    return redirect(url_for('official_car.scrapped_cars'))
+
+@bp.route('/add_usage_record', methods=['GET', 'POST'])
+@login_required
+def add_usage_record():
+    form = CarUsageRecordFullForm()
+    
+    # 获取所有车辆的车牌号作为选项
+    cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [(car.plate_number, car.plate_number) for car in cars]
+    
+    if form.validate_on_submit():
+        # 根据车牌号查找车辆
+        car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        
+        if not car:
+            flash('未找到对应车牌号的车辆', 'danger')
+            return render_template('vehicle/official_car/add_usage_record.html', title='添加用车记录', form=form)
+        
+        # 创建新的用车记录
+        record = CarUsageRecord(
+            car_id=car.id,
+            department=form.department.data,
+            plate_number=form.plate_number.data,
+            departure_date=form.departure_date.data,
+            departure_time=datetime.strptime(form.departure_time.data, '%H:%M').time(),
+            departure_mileage=form.departure_mileage.data,
+            destination_purpose=form.destination_purpose.data,
+            driver=form.driver.data,
+            passengers=form.passengers.data,
+            created_by=current_user.id
+        )
+        
+        # 处理收车信息
+        had_return_time = record.return_time is not None
+        
+        if form.return_time.data:
+            record.return_time = form.return_time.data
+            record.return_mileage = form.return_mileage.data
+            record.refueling = form.refueling.data
+            record.maintenance = form.maintenance.data
+            # 如果表单中没有提供toll_fee，则默认设置为'etc'
+            record.toll_fee = form.toll_fee.data or 'etc'
+            record.parking_fee = form.parking_fee.data
+            record.accident_violation = form.accident_violation.data
+            
+            # 计算使用时长
+            record.usage_duration = calculate_usage_duration(
+                record.departure_date, 
+                record.departure_time, 
+                form.return_time.data
+            )
+            
+            # 如果提供了收车信息，车辆状态更新为空闲
+            car.status = CarStatus.idle
+        else:
+            # 清除收车信息
+            record.return_time = None
+            record.return_mileage = None
+            record.refueling = False
+            record.maintenance = None
+            record.toll_fee = None  # 不设置默认值
+            record.parking_fee = None
+            record.accident_violation = None
+            record.usage_duration = None
+            
+            # 如果没有提供收车信息，车辆状态更新为派出
+            car.status = CarStatus.dispatched
+        
+        # 如果收车状态发生变化，更新车辆状态
+        if had_return_time != (form.return_time.data is not None):
+            car.updated_by = current_user.id
+            car.updated_at = datetime.now()
+        
+        car.updated_by = current_user.id
+        car.updated_at = datetime.now()
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        flash('用车记录已添加', 'success')
+        return redirect(url_for('official_car.car_usage'))
+    
+    return render_template('vehicle/official_car/add_usage_record.html', title='添加用车记录', form=form)
+
+@bp.route('/edit_usage_record/<int:record_id>', methods=['GET', 'POST'])
+@login_required
+def edit_usage_record(record_id):
+    record = CarUsageRecord.query.get_or_404(record_id)
+    car = OfficialCar.query.get_or_404(record.car_id)
+    form = CarUsageRecordFullForm()
+    
+    # 获取所有车辆的车牌号作为选项
+    cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [(c.plate_number, c.plate_number) for c in cars]
+    
+    if form.validate_on_submit():
+        # 检查车牌号是否变更
+        if form.plate_number.data != record.plate_number:
+            # 根据新车牌号查找车辆
+            new_car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+            
+            if not new_car:
+                flash('未找到对应车牌号的车辆', 'danger')
+                return render_template('vehicle/official_car/edit_usage_record.html', 
+                                      title='编辑用车记录', 
+                                      form=form, 
+                                      record=record)
+            
+            # 如果原车辆状态为派出，则恢复为空闲
+            if car.status == CarStatus.dispatched:
+                car.status = CarStatus.idle
+                car.updated_by = current_user.id
+                car.updated_at = datetime.now()
+            
+            # 更新记录关联的车辆ID
+            record.car_id = new_car.id
+            car = new_car
+        
+        # 更新记录信息
+        record.department = form.department.data
+        record.plate_number = form.plate_number.data
+        record.departure_date = form.departure_date.data
+        record.departure_time = datetime.strptime(form.departure_time.data, '%H:%M').time()
+        record.departure_mileage = form.departure_mileage.data
+        record.destination_purpose = form.destination_purpose.data
+        record.driver = form.driver.data
+        record.passengers = form.passengers.data
+        record.updated_by = current_user.id
+        record.updated_at = datetime.now()
+        
+        # 处理收车信息
+        had_return_time = record.return_time is not None
+        
+        if form.return_time.data:
+            record.return_time = form.return_time.data
+            record.return_mileage = form.return_mileage.data
+            record.refueling = form.refueling.data
+            record.maintenance = form.maintenance.data
+            # 如果表单中没有提供toll_fee，则默认设置为'etc'
+            record.toll_fee = form.toll_fee.data or 'etc'
+            record.parking_fee = form.parking_fee.data
+            record.accident_violation = form.accident_violation.data
+            
+            # 计算使用时长
+            record.usage_duration = calculate_usage_duration(
+                record.departure_date, 
+                record.departure_time, 
+                form.return_time.data
+            )
+            
+            # 如果提供了收车信息，车辆状态更新为空闲
+            car.status = CarStatus.idle
+        else:
+            # 清除收车信息
+            record.return_time = None
+            record.return_mileage = None
+            record.refueling = False
+            record.maintenance = None
+            record.toll_fee = None  # 不设置默认值
+            record.parking_fee = None
+            record.accident_violation = None
+            record.usage_duration = None
+            
+            # 如果没有提供收车信息，车辆状态更新为派出
+            car.status = CarStatus.dispatched
+        
+        # 如果收车状态发生变化，更新车辆状态
+        if had_return_time != (form.return_time.data is not None):
+            car.updated_by = current_user.id
+            car.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        flash('用车记录已更新', 'success')
+        return redirect(url_for('official_car.car_usage'))
+    
+    # 预填充表单
+    if request.method == 'GET':
+        form.department.data = record.department
+        form.plate_number.data = record.plate_number
+        form.departure_date.data = record.departure_date
+        form.departure_time.data = record.departure_time.strftime('%H:%M')
+        form.departure_mileage.data = record.departure_mileage
+        form.destination_purpose.data = record.destination_purpose
+        form.driver.data = record.driver
+        form.passengers.data = record.passengers
+        form.return_time.data = record.return_time
+        form.return_mileage.data = record.return_mileage
+        form.refueling.data = record.refueling
+        form.maintenance.data = record.maintenance
+        form.toll_fee.data = record.toll_fee
+        form.parking_fee.data = record.parking_fee
+        form.accident_violation.data = record.accident_violation
+    
+    return render_template('vehicle/official_car/edit_usage_record.html', 
+                          title='编辑用车记录', 
+                          form=form, 
+                          record=record)
+
+@bp.route('/delete_usage_record/<int:record_id>', methods=['POST'])
+@login_required
+def delete_usage_record(record_id):
+    record = CarUsageRecord.query.get_or_404(record_id)
+    car = OfficialCar.query.get_or_404(record.car_id)
+    
+    # 如果车辆状态为派出且没有其他派出记录，则恢复为空闲
+    if car.status == CarStatus.dispatched:
+        other_records = CarUsageRecord.query.filter(
+            CarUsageRecord.car_id == car.id,
+            CarUsageRecord.id != record.id,
+            CarUsageRecord.return_time.is_(None)
+        ).count()
+        
+        if other_records == 0:
+            car.status = CarStatus.idle
+            car.updated_by = current_user.id
+            car.updated_at = datetime.now()
+    
+    # 删除记录
+    db.session.delete(record)
+    db.session.commit()
+    
+    flash('用车记录已删除', 'success')
+    return redirect(url_for('official_car.car_usage'))
+
+@bp.route('/export_usage_records')
+@login_required
+def export_usage_records():
+    # 获取查询参数
+    year = request.args.get('year', '')
+    plate_number = request.args.get('plate_number', '')
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarUsageRecord.query
+    
+    if year:
+        query = query.filter(db.extract('year', CarUsageRecord.departure_date) == year)
+    
+    if plate_number:
+        query = query.filter(CarUsageRecord.plate_number == plate_number)
+    
+    if search:
+        query = query.filter(
+            (CarUsageRecord.department.ilike(f'%{search}%')) |
+            (CarUsageRecord.plate_number.ilike(f'%{search}%')) |
+            (CarUsageRecord.destination_purpose.ilike(f'%{search}%')) |
+            (CarUsageRecord.driver.ilike(f'%{search}%')) |
+            (CarUsageRecord.passengers.ilike(f'%{search}%')) |
+            (CarUsageRecord.maintenance.ilike(f'%{search}%')) |
+            (CarUsageRecord.accident_violation.ilike(f'%{search}%'))
+        )
+    
+    # 按出车日期和时间升序排序（早的记录在前），相同日期和时间的按创建时间升序排序（早创建的在前）
+    records = query.order_by(
+        CarUsageRecord.departure_date.asc(), 
+        CarUsageRecord.departure_time.asc(),
+        CarUsageRecord.created_at.asc()
+    ).all()
+    
+    # 创建DataFrame
+    data = []
+    for i, record in enumerate(records, 1):
+        data.append({
+            '序号': i,
+            '申请使用部门': record.department,
+            '使用车牌号': record.plate_number,
+            '出车日期': record.departure_date.strftime('%Y-%m-%d'),
+            '出车时间': record.departure_time.strftime('%H:%M'),
+            '出车里程': record.departure_mileage if record.departure_mileage else '-',
+            '出车去向及事由': record.destination_purpose if record.destination_purpose else '-',
+            '收车时间': record.return_time.strftime('%Y-%m-%d %H:%M') if record.return_time else '-',
+            '收车里程': record.return_mileage if record.return_mileage else '-',
+            '使用时长': record.usage_duration if record.usage_duration else '-',
+            '驾驶员': record.driver if record.driver else '-',
+            '随同人员': record.passengers if record.passengers else '-',
+            '加油': '是' if record.refueling else '否',
+            '维修': record.maintenance if record.maintenance else '-',
+            '过路过桥费': record.toll_fee if record.toll_fee else '-',
+            '停车费': record.parking_fee if record.parking_fee else '-',
+            '交通事故、违章': record.accident_violation if record.accident_violation else '-'
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # 创建临时文件
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    filename = f'车辆使用记录_{timestamp}.xlsx'
+    temp_file_path = os.path.join(os.getcwd(), 'app', 'static', 'temp', filename)
+    
+    # 确保目录存在
+    os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+    
+    # 使用ExcelWriter添加标题
+    with pd.ExcelWriter(temp_file_path, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='车辆使用记录', index=False, startrow=2)  # 从第3行开始写入数据
+        
+        # 获取工作簿和工作表对象
+        workbook = writer.book
+        worksheet = writer.sheets['车辆使用记录']
+        
+        # 设置标题格式
+        title_format = workbook.add_format({
+            'bold': True,
+            'font_size': 16,
+            'align': 'center',
+            'valign': 'vcenter'
+        })
+        
+        # 合并单元格并写入标题
+        worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆使用记录', title_format)
+        
+        # 添加导出时间
+        date_format = workbook.add_format({
+            'align': 'right',
+            'font_size': 10
+        })
+        export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+        worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+        
+        # 自动调整列宽
+        for idx, col in enumerate(df.columns):
+            column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+            worksheet.set_column(idx, idx, column_width + 2)
+    
+    # 发送文件
+    return send_file(temp_file_path, as_attachment=True, download_name=filename) 

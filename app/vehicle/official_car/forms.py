@@ -25,19 +25,44 @@ class OfficialCarForm(FlaskForm):
 
 class CarUsageRecordForm(FlaskForm):
     """车辆使用记录表单"""
-    car_id = SelectField('车辆', coerce=int, validators=[DataRequired(message='请选择车辆')])
-    applicant = StringField('申请人', validators=[DataRequired(message='请输入申请人')])
-    department = StringField('部门')
-    phone = StringField('联系电话')
-    start_time = DateTimeField('开始时间', format='%Y-%m-%d %H:%M', validators=[DataRequired(message='请选择开始时间')])
-    expected_end_time = DateTimeField('预计结束时间', format='%Y-%m-%d %H:%M', validators=[DataRequired(message='请选择预计结束时间')])
-    actual_end_time = DateTimeField('实际结束时间', format='%Y-%m-%d %H:%M', validators=[Optional()])
-    passengers = IntegerField('乘车人数', validators=[Optional(), NumberRange(min=1, message='乘车人数必须大于0')])
-    destination = StringField('目的地')
-    purpose = TextAreaField('用车事由')
-    start_mileage = FloatField('起始里程', validators=[Optional()])
-    end_mileage = FloatField('结束里程', validators=[Optional()])
-    remarks = TextAreaField('备注')
+    department = StringField('申请使用部门', validators=[DataRequired(message='申请使用部门必填')])
+    plate_number = StringField('使用车牌号', validators=[DataRequired(message='使用车牌号必填')])
+    departure_date = DateTimeField('出车日期', format='%Y-%m-%d', validators=[DataRequired(message='出车日期必填')])
+    departure_time = StringField('出车时间', validators=[DataRequired(message='出车时间必填')])
+    departure_mileage = FloatField('出车里程', validators=[Optional()])
+    destination_purpose = TextAreaField('出车去向及事由', validators=[Optional()])
+    driver = StringField('驾驶员', validators=[Optional()])
+    passengers = TextAreaField('随同人员', validators=[Optional()])
+    submit = SubmitField('提交')
+
+class CarReturnForm(FlaskForm):
+    """车辆收车表单"""
+    return_time = DateTimeField('收车时间', format='%Y-%m-%d %H:%M', validators=[DataRequired(message='收车时间必填')])
+    return_mileage = FloatField('收车里程', validators=[Optional()])
+    refueling = BooleanField('加油', default=False)
+    maintenance = StringField('维修', validators=[Optional()])
+    toll_fee = StringField('过路过桥费', default='etc', validators=[Optional()])
+    parking_fee = StringField('停车费', validators=[Optional()])
+    accident_violation = TextAreaField('交通事故、违章', validators=[Optional()])
+    submit = SubmitField('提交')
+
+class CarUsageRecordFullForm(FlaskForm):
+    """完整的车辆使用记录表单（用于添加记录）"""
+    department = StringField('申请使用部门', validators=[DataRequired(message='申请使用部门必填')])
+    plate_number = SelectField('使用车牌号', validators=[DataRequired(message='使用车牌号必填')])
+    departure_date = DateTimeField('出车日期', format='%Y-%m-%d', validators=[DataRequired(message='出车日期必填')])
+    departure_time = StringField('出车时间', validators=[DataRequired(message='出车时间必填')])
+    departure_mileage = FloatField('出车里程', validators=[Optional()])
+    destination_purpose = TextAreaField('出车去向及事由', validators=[Optional()])
+    return_time = DateTimeField('收车时间', format='%Y-%m-%d %H:%M', validators=[Optional()])
+    return_mileage = FloatField('收车里程', validators=[Optional()])
+    driver = StringField('驾驶员', validators=[Optional()])
+    passengers = TextAreaField('随同人员', validators=[Optional()])
+    refueling = BooleanField('加油', default=False)
+    maintenance = StringField('维修', validators=[Optional()])
+    toll_fee = StringField('过路过桥费', validators=[Optional()])
+    parking_fee = StringField('停车费', validators=[Optional()])
+    accident_violation = TextAreaField('交通事故、违章', validators=[Optional()])
     submit = SubmitField('提交')
 
 class CarMaintenanceRecordForm(FlaskForm):

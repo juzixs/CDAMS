@@ -62,35 +62,39 @@ class CarUsageRecord(db.Model):
     car_id = db.Column(db.Integer, db.ForeignKey('official_cars.id'), nullable=False, comment='车辆ID')
     
     # 申请信息
-    applicant = db.Column(db.String(50), nullable=False, comment='申请人')
-    department = db.Column(db.String(50), comment='部门')
-    phone = db.Column(db.String(20), comment='联系电话')
+    department = db.Column(db.String(50), nullable=False, comment='申请使用部门')
+    plate_number = db.Column(db.String(20), nullable=False, comment='使用车牌号')
     
-    # 用车信息
-    start_time = db.Column(db.DateTime, nullable=False, comment='开始时间')
-    expected_end_time = db.Column(db.DateTime, nullable=False, comment='预计结束时间')
-    actual_end_time = db.Column(db.DateTime, comment='实际结束时间')
-    passengers = db.Column(db.Integer, comment='乘车人数')
-    destination = db.Column(db.String(100), comment='目的地')
-    purpose = db.Column(db.String(200), comment='用车事由')
+    # 出车信息
+    departure_date = db.Column(db.Date, nullable=False, comment='出车日期')
+    departure_time = db.Column(db.Time, nullable=False, comment='出车时间')
+    departure_mileage = db.Column(db.Float, comment='出车里程')
+    destination_purpose = db.Column(db.String(200), comment='出车去向及事由')
     
-    # 里程信息
-    start_mileage = db.Column(db.Float, comment='起始里程')
-    end_mileage = db.Column(db.Float, comment='结束里程')
+    # 收车信息
+    return_time = db.Column(db.DateTime, comment='收车时间')
+    return_mileage = db.Column(db.Float, comment='收车里程')
     
-    # 审批信息
-    status = db.Column(db.String(20), default='pending', comment='状态：pending（待审核）, approved（已批准）, rejected（已拒绝）, completed（已完成）')
-    approver = db.Column(db.String(50), comment='审批人')
+    # 使用信息
+    usage_duration = db.Column(db.String(20), comment='使用时长')
+    driver = db.Column(db.String(50), comment='驾驶员')
+    passengers = db.Column(db.String(200), comment='随同人员')
     
-    # 备注
-    remarks = db.Column(db.Text, comment='备注')
+    # 费用信息
+    refueling = db.Column(db.Boolean, default=False, comment='加油')
+    maintenance = db.Column(db.String(200), comment='维修')
+    toll_fee = db.Column(db.String(50), default='etc', comment='过路过桥费')
+    parking_fee = db.Column(db.String(50), comment='停车费')
+    accident_violation = db.Column(db.String(200), comment='交通事故、违章')
     
     # 系统信息
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+    created_by = db.Column(db.Integer, comment='创建人ID')
+    updated_by = db.Column(db.Integer, comment='更新人ID')
     
     def __repr__(self):
-        return f'<CarUsageRecord {self.id} {self.car_id}>'
+        return f'<CarUsageRecord {self.id} {self.plate_number}>'
 
 class CarMaintenanceRecord(db.Model):
     """车辆维修保养记录模型"""
