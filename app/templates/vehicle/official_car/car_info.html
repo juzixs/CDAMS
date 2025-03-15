@@ -4,16 +4,16 @@
 <div class="container-fluid px-2 px-md-4">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
         <h1 class="mb-3 mb-md-0">车辆信息</h1>
-        <div class="btn-group btn-group-sm btn-group-md-md">
-            <a href="{{ url_for('official_car.add_car') }}" class="btn btn-primary">
-                <i class="fas fa-plus"></i> <span class="d-none d-sm-inline">新增车辆</span>
+        <div class="card-tools">
+            <a href="{{ url_for('official_car.index') }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-left"></i> 返回首页
             </a>
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-                <i class="fas fa-file-import"></i> <span class="d-none d-sm-inline">导入Excel</span>
+            <a href="{{ url_for('official_car.add_car') }}" class="btn btn-primary btn-sm ml-2">
+                <i class="fas fa-plus"></i> 新增车辆
+            </a>
+            <button type="button" class="btn btn-success btn-sm ml-2" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fas fa-file-import"></i> 导入Excel
             </button>
-            <a href="{{ url_for('official_car.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> <span class="d-none d-sm-inline">返回首页</span>
-            </a>
         </div>
     </div>
 
