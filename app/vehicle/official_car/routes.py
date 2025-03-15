@@ -334,8 +334,11 @@ def return_car(record_id):
         record.return_mileage = form.return_mileage.data
         record.refueling = form.refueling.data
         record.maintenance = form.maintenance.data
-        # 如果表单中没有提供toll_fee，则默认设置为'etc'
-        record.toll_fee = form.toll_fee.data or 'etc'
+        # 修改：只有当toll_fee字段为None时才设置默认值，如果是空字符串则保留用户的输入
+        if form.toll_fee.data is None:
+            record.toll_fee = 'etc'
+        else:
+            record.toll_fee = form.toll_fee.data
         record.parking_fee = form.parking_fee.data
         record.accident_violation = form.accident_violation.data
         
@@ -352,6 +355,10 @@ def return_car(record_id):
         db.session.commit()
         flash('车辆归还成功！', 'success')
         return redirect(url_for('vehicle.official_car.car_usage'))
+    
+    # 在GET请求时预填充toll_fee字段为'etc'
+    if request.method == 'GET':
+        form.toll_fee.data = 'etc'
     
     return render_template('vehicle/official_car/return_car.html', form=form, record=record, car=car)
 
@@ -712,8 +719,11 @@ def add_usage_record():
             record.return_mileage = form.return_mileage.data
             record.refueling = form.refueling.data
             record.maintenance = form.maintenance.data
-            # 如果表单中没有提供toll_fee，则默认设置为'etc'
-            record.toll_fee = form.toll_fee.data or 'etc'
+            # 修改：只有当toll_fee字段为None时才设置默认值，如果是空字符串则保留用户的输入
+            if form.toll_fee.data is None:
+                record.toll_fee = 'etc'
+            else:
+                record.toll_fee = form.toll_fee.data
             record.parking_fee = form.parking_fee.data
             record.accident_violation = form.accident_violation.data
             
@@ -732,7 +742,7 @@ def add_usage_record():
             record.return_mileage = None
             record.refueling = False
             record.maintenance = None
-            record.toll_fee = None  # 不设置默认值
+            record.toll_fee = None
             record.parking_fee = None
             record.accident_violation = None
             record.usage_duration = None
@@ -810,8 +820,11 @@ def edit_usage_record(record_id):
             record.return_mileage = form.return_mileage.data
             record.refueling = form.refueling.data
             record.maintenance = form.maintenance.data
-            # 如果表单中没有提供toll_fee，则默认设置为'etc'
-            record.toll_fee = form.toll_fee.data or 'etc'
+            # 修改：只有当toll_fee字段为None时才设置默认值，如果是空字符串则保留用户的输入
+            if form.toll_fee.data is None:
+                record.toll_fee = 'etc'
+            else:
+                record.toll_fee = form.toll_fee.data
             record.parking_fee = form.parking_fee.data
             record.accident_violation = form.accident_violation.data
             
@@ -830,7 +843,7 @@ def edit_usage_record(record_id):
             record.return_mileage = None
             record.refueling = False
             record.maintenance = None
-            record.toll_fee = None  # 不设置默认值
+            record.toll_fee = None
             record.parking_fee = None
             record.accident_violation = None
             record.usage_duration = None

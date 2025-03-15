@@ -41,7 +41,7 @@ class CarReturnForm(FlaskForm):
     return_mileage = FloatField('收车里程', validators=[Optional()])
     refueling = BooleanField('加油', default=False)
     maintenance = StringField('维修', validators=[Optional()])
-    toll_fee = StringField('过路过桥费', default='etc', validators=[Optional()])
+    toll_fee = StringField('过路过桥费', validators=[Optional()])
     parking_fee = StringField('停车费', validators=[Optional()])
     accident_violation = TextAreaField('交通事故、违章', validators=[Optional()])
     submit = SubmitField('提交')

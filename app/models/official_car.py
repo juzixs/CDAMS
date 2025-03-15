@@ -83,7 +83,7 @@ class CarUsageRecord(db.Model):
     # 费用信息
     refueling = db.Column(db.Boolean, default=False, comment='加油')
     maintenance = db.Column(db.String(200), comment='维修')
-    toll_fee = db.Column(db.String(50), default='etc', comment='过路过桥费')
+    toll_fee = db.Column(db.String(50), comment='过路过桥费')
     parking_fee = db.Column(db.String(50), comment='停车费')
     accident_violation = db.Column(db.String(200), comment='交通事故、违章')
     
