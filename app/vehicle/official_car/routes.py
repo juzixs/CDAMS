@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, time
 import pandas as pd
 import uuid
 from sqlalchemy import desc
+from io import BytesIO
 
 @bp.route('/')
 @login_required
@@ -604,48 +605,54 @@ def export_scrapped_cars():
     
     df = pd.DataFrame(data)
     
-    # 创建临时文件
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    filename = f'报废车辆信息_{timestamp}.xlsx'
-    temp_file_path = os.path.join(os.getcwd(), 'app', 'static', 'temp', filename)
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
     
-    # 确保目录存在
-    os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+    # 指定sheet名称
+    sheet_name = '报废车辆信息'
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)  # 从第3行开始写入数据
     
-    # 使用ExcelWriter添加标题
-    with pd.ExcelWriter(temp_file_path, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='报废车辆信息', index=False, startrow=2)  # 从第3行开始写入数据
-        
-        # 获取工作簿和工作表对象
-        workbook = writer.book
-        worksheet = writer.sheets['报废车辆信息']
-        
-        # 设置标题格式
-        title_format = workbook.add_format({
-            'bold': True,
-            'font_size': 16,
-            'align': 'center',
-            'valign': 'vcenter'
-        })
-        
-        # 合并单元格并写入标题
-        worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '报废车辆信息', title_format)
-        
-        # 添加导出时间
-        date_format = workbook.add_format({
-            'align': 'right',
-            'font_size': 10
-        })
-        export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-        worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
-        
-        # 自动调整列宽
-        for idx, col in enumerate(df.columns):
-            column_width = max(len(str(col)), df[col].astype(str).map(len).max())
-            worksheet.set_column(idx, idx, column_width + 2)
+    # 获取工作簿和工作表对象
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
     
-    # 发送文件
-    return send_file(temp_file_path, as_attachment=True, download_name=filename)
+    # 设置标题格式
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+    
+    # 合并单元格并写入标题
+    worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '报废车辆信息', title_format)
+    
+    # 添加导出时间
+    date_format = workbook.add_format({
+        'align': 'right',
+        'font_size': 10
+    })
+    export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+    
+    # 自动调整列宽
+    for idx, col in enumerate(df.columns):
+        column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+        worksheet.set_column(idx, idx, column_width + 2)
+    
+    writer.close()
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f'报废车辆信息_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 @bp.route('/change_status/<int:car_id>', methods=['POST'])
 @login_required
@@ -970,45 +977,51 @@ def export_usage_records():
     
     df = pd.DataFrame(data)
     
-    # 创建临时文件
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    filename = f'车辆使用记录_{timestamp}.xlsx'
-    temp_file_path = os.path.join(os.getcwd(), 'app', 'static', 'temp', filename)
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
     
-    # 确保目录存在
-    os.makedirs(os.path.dirname(temp_file_path), exist_ok=True)
+    # 指定sheet名称
+    sheet_name = '车辆使用记录'
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)  # 从第3行开始写入数据
     
-    # 使用ExcelWriter添加标题
-    with pd.ExcelWriter(temp_file_path, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='车辆使用记录', index=False, startrow=2)  # 从第3行开始写入数据
-        
-        # 获取工作簿和工作表对象
-        workbook = writer.book
-        worksheet = writer.sheets['车辆使用记录']
-        
-        # 设置标题格式
-        title_format = workbook.add_format({
-            'bold': True,
-            'font_size': 16,
-            'align': 'center',
-            'valign': 'vcenter'
-        })
-        
-        # 合并单元格并写入标题
-        worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆使用记录', title_format)
-        
-        # 添加导出时间
-        date_format = workbook.add_format({
-            'align': 'right',
-            'font_size': 10
-        })
-        export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
-        worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
-        
-        # 自动调整列宽
-        for idx, col in enumerate(df.columns):
-            column_width = max(len(str(col)), df[col].astype(str).map(len).max())
-            worksheet.set_column(idx, idx, column_width + 2)
+    # 获取工作簿和工作表对象
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
     
-    # 发送文件
-    return send_file(temp_file_path, as_attachment=True, download_name=filename) 
+    # 设置标题格式
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+    
+    # 合并单元格并写入标题
+    worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆使用记录', title_format)
+    
+    # 添加导出时间
+    date_format = workbook.add_format({
+        'align': 'right',
+        'font_size': 10
+    })
+    export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+    
+    # 自动调整列宽
+    for idx, col in enumerate(df.columns):
+        column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+        worksheet.set_column(idx, idx, column_width + 2)
+    
+    writer.close()
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f'车辆使用记录_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ) 
