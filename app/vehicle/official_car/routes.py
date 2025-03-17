@@ -1063,8 +1063,8 @@ def car_insurance():
             (CarInsurance.car_type.ilike(f'%{search}%'))
         )
     
-    # 按续保日期降序排序
-    records = query.order_by(CarInsurance.renewal_date.desc()).paginate(page=page, per_page=per_page)
+    # 按续保日期降序排序，当续保日期相同时，按创建时间降序排序（新添加的在前）
+    records = query.order_by(CarInsurance.renewal_date.desc(), CarInsurance.created_at.desc()).paginate(page=page, per_page=per_page)
     
     return render_template('vehicle/official_car/car_insurance.html', 
                           title='车辆保险', 
@@ -1241,11 +1241,11 @@ def export_insurance():
     if search:
         query = query.filter(
             (CarInsurance.plate_number.ilike(f'%{search}%')) |
-            (CarInsurance.car_type.ilike(f'%{search}%'))
+             (CarInsurance.car_type.ilike(f'%{search}%'))
         )
     
-    # 按续保日期降序排序
-    records = query.order_by(CarInsurance.renewal_date.desc()).all()
+    # 按续保日期升序排序，当续保日期相同时，按创建时间升序排序（旧添加的在前）
+    records = query.order_by(CarInsurance.renewal_date.asc(), CarInsurance.created_at.asc()).all()
     
     # 创建DataFrame
     data = []
