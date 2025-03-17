@@ -98,8 +98,7 @@ class CarFuelRecordForm(FlaskForm):
 
 class CarInsuranceForm(FlaskForm):
     """车辆保险表单"""
-    plate_number = StringField('车牌号', validators=[DataRequired()])
-    car_type = StringField('车型')
+    plate_number = SelectField('车牌号', validators=[DataRequired()])
     amount = FloatField('金额', validators=[DataRequired()])
     insurance_period = StringField('保险日期', validators=[DataRequired()], 
                                   description='格式：YYYY-MM-DD至YYYY-MM-DD')

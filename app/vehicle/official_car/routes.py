@@ -1077,14 +1077,17 @@ def add_insurance():
     """添加车辆保险记录"""
     form = CarInsuranceForm()
     
+    # 获取所有车辆的车牌号作为选项
+    cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [(car.plate_number, car.plate_number) for car in cars]
+    
     # 获取车牌号参数（如果有）
     plate_number = request.args.get('plate_number', '')
-    if plate_number:
+    if plate_number and plate_number in [choice[0] for choice in form.plate_number.choices]:
+        form.plate_number.data = plate_number
         car = OfficialCar.query.filter_by(plate_number=plate_number).first()
+        
         if car:
-            form.plate_number.data = car.plate_number
-            form.car_type.data = car.car_type
-            
             # 查找最近的保险记录
             last_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
             
@@ -1121,7 +1124,7 @@ def add_insurance():
         insurance = CarInsurance(
             car_id=car.id,
             plate_number=car.plate_number,
-            car_type=car.car_type,
+            car_type=car.car_type,  # 从车辆信息中获取车型
             amount=form.amount.data,
             insurance_start_date=start_date,
             insurance_end_date=end_date,
@@ -1135,9 +1138,13 @@ def add_insurance():
         flash('车辆保险记录已添加', 'success')
         return redirect(url_for('official_car.car_insurance'))
     
+    # 获取所有车辆的车型信息，用于前端显示
+    car_types = {car.plate_number: car.car_type for car in cars}
+    
     return render_template('vehicle/official_car/add_insurance.html', 
                           title='添加车辆保险', 
-                          form=form)
+                          form=form,
+                          car_types=car_types)
 
 @bp.route('/edit_insurance/<int:insurance_id>', methods=['GET', 'POST'])
 @login_required
@@ -1145,6 +1152,10 @@ def edit_insurance(insurance_id):
     """编辑车辆保险记录"""
     insurance = CarInsurance.query.get_or_404(insurance_id)
     form = CarInsuranceForm()
+    
+    # 获取所有车辆的车牌号作为选项
+    cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [(car.plate_number, car.plate_number) for car in cars]
     
     if form.validate_on_submit():
         # 根据车牌号查找车辆
@@ -1165,7 +1176,7 @@ def edit_insurance(insurance_id):
         # 更新保险记录
         insurance.car_id = car.id
         insurance.plate_number = car.plate_number
-        insurance.car_type = car.car_type
+        insurance.car_type = car.car_type  # 从车辆信息中获取车型
         insurance.amount = form.amount.data
         insurance.insurance_start_date = start_date
         insurance.insurance_end_date = end_date
@@ -1178,18 +1189,20 @@ def edit_insurance(insurance_id):
         flash('车辆保险记录已更新', 'success')
         return redirect(url_for('official_car.car_insurance'))
     
-    # 预填充表单
-    if request.method == 'GET':
+    elif request.method == 'GET':
         form.plate_number.data = insurance.plate_number
-        form.car_type.data = insurance.car_type
         form.amount.data = insurance.amount
         form.insurance_period.data = f"{insurance.insurance_start_date.strftime('%Y-%m-%d')}至{insurance.insurance_end_date.strftime('%Y-%m-%d')}"
         form.renewal_date.data = insurance.renewal_date
     
+    # 获取所有车辆的车型信息，用于前端显示
+    car_types = {car.plate_number: car.car_type for car in cars}
+    
     return render_template('vehicle/official_car/edit_insurance.html', 
                           title='编辑车辆保险', 
                           form=form,
-                          insurance=insurance)
+                          insurance=insurance,
+                          car_types=car_types)
 
 @bp.route('/delete_insurance/<int:insurance_id>', methods=['POST'])
 @login_required

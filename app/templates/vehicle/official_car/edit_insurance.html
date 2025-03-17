@@ -22,7 +22,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     {{ form.plate_number.label(class="form-label") }}
-                                    {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else "")) }}
+                                    {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else ""), id="plate_number_select") }}
                                     {% for error in form.plate_number.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
@@ -30,11 +30,8 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    {{ form.car_type.label(class="form-label") }}
-                                    {{ form.car_type(class="form-control" + (" is-invalid" if form.car_type.errors else "")) }}
-                                    {% for error in form.car_type.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                    {% endfor %}
+                                    <label class="form-label">车型</label>
+                                    <input type="text" class="form-control" id="car_type_display" readonly>
                                 </div>
                             </div>
                         </div>
@@ -84,4 +81,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 车型信息
+    var carTypes = JSON.parse('{{ car_types|tojson|safe }}');
+    
+    // 当选择车牌号时，自动填充车型
+    $(document).ready(function() {
+        // 初始化时设置车型
+        updateCarType();
+        
+        // 当车牌号变化时更新车型
+        $('#plate_number_select').change(function() {
+            updateCarType();
+        });
+        
+        function updateCarType() {
+            var plateNumber = $('#plate_number_select').val();
+            var carType = carTypes[plateNumber] || '';
+            $('#car_type_display').val(carType);
+        }
+    });
+</script>
 {% endblock %} 
