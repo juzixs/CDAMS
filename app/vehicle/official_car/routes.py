@@ -1083,27 +1083,38 @@ def add_insurance():
     
     # 获取车牌号参数（如果有）
     plate_number = request.args.get('plate_number', '')
-    if plate_number and plate_number in [choice[0] for choice in form.plate_number.choices]:
-        form.plate_number.data = plate_number
-        car = OfficialCar.query.filter_by(plate_number=plate_number).first()
+    
+    # 设置默认值
+    today = datetime.now().date()
+    
+    if request.method == 'GET':
+        # 默认设置续保日期为当前日期
+        form.renewal_date.data = today
         
-        if car:
-            # 查找最近的保险记录
-            last_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+        if plate_number and plate_number in [choice[0] for choice in form.plate_number.choices]:
+            form.plate_number.data = plate_number
+            car = OfficialCar.query.filter_by(plate_number=plate_number).first()
             
-            # 设置默认保险期限
-            today = datetime.now().date()
-            if last_insurance:
-                # 如果有上一次保险记录，使用其结束日期后一天作为开始日期
-                start_date = last_insurance.insurance_end_date + timedelta(days=1)
-                end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
-            else:
-                # 如果没有保险记录，使用当前日期作为开始日期
-                start_date = today
-                end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+            if car:
+                # 查找最近的保险记录
+                last_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
                 
+                # 设置默认保险期限
+                if last_insurance:
+                    # 如果有上一次保险记录，使用其结束日期后一天作为开始日期
+                    start_date = last_insurance.insurance_end_date + timedelta(days=1)
+                    end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+                else:
+                    # 如果没有保险记录，使用当前日期作为开始日期
+                    start_date = today
+                    end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+                    
+                form.insurance_period.data = f"{start_date.strftime('%Y-%m-%d')}至{end_date.strftime('%Y-%m-%d')}"
+        else:
+            # 如果没有指定车牌号（从车辆保险页面点击"添加记录"），设置默认保险期限为一年
+            start_date = today
+            end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
             form.insurance_period.data = f"{start_date.strftime('%Y-%m-%d')}至{end_date.strftime('%Y-%m-%d')}"
-            form.renewal_date.data = today
     
     if form.validate_on_submit():
         # 根据车牌号查找车辆
@@ -1113,7 +1124,8 @@ def add_insurance():
             flash('未找到对应车牌号的车辆', 'danger')
             return render_template('vehicle/official_car/add_insurance.html', 
                                   title='添加车辆保险', 
-                                  form=form)
+                                  form=form,
+                                  car_types=car_types)
         
         # 解析保险日期
         start_date_str, end_date_str = form.insurance_period.data.split('至')
@@ -1296,4 +1308,43 @@ def export_insurance():
         as_attachment=True,
         download_name=filename,
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ) 
+    )
+
+@bp.route('/get_latest_insurance')
+@login_required
+def get_latest_insurance():
+    """获取车辆的最新保险记录并计算下一年的保险时间段"""
+    plate_number = request.args.get('plate_number', '')
+    
+    if not plate_number:
+        return jsonify({'success': False, 'message': '未提供车牌号'})
+    
+    # 查找车辆
+    car = OfficialCar.query.filter_by(plate_number=plate_number).first()
+    
+    if not car:
+        return jsonify({'success': False, 'message': '未找到对应车牌号的车辆'})
+    
+    # 查找最近的保险记录
+    last_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+    
+    today = datetime.now().date()
+    
+    # 计算保险期限
+    if last_insurance:
+        # 如果有上一次保险记录，使用其结束日期后一天作为开始日期
+        start_date = last_insurance.insurance_end_date + timedelta(days=1)
+        end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+    else:
+        # 如果没有保险记录，使用当前日期作为开始日期
+        start_date = today
+        end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+    
+    insurance_period = f"{start_date.strftime('%Y-%m-%d')}至{end_date.strftime('%Y-%m-%d')}"
+    
+    return jsonify({
+        'success': True,
+        'insurance_period': insurance_period,
+        'has_previous_insurance': last_insurance is not None,
+        'previous_end_date': last_insurance.insurance_end_date.strftime('%Y-%m-%d') if last_insurance else None
+    }) 

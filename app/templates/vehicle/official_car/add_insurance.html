@@ -49,7 +49,7 @@
                                 <div class="form-group">
                                     {{ form.insurance_period.label(class="form-label") }}
                                     <small class="text-muted d-block">{{ form.insurance_period.description }}</small>
-                                    {{ form.insurance_period(class="form-control" + (" is-invalid" if form.insurance_period.errors else "")) }}
+                                    {{ form.insurance_period(class="form-control" + (" is-invalid" if form.insurance_period.errors else ""), id="insurance_period") }}
                                     {% for error in form.insurance_period.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
@@ -88,20 +88,39 @@
     // 车型信息
     var carTypes = JSON.parse('{{ car_types|tojson|safe }}');
     
-    // 当选择车牌号时，自动填充车型
+    // 当选择车牌号时，自动填充车型和更新保险日期
     $(document).ready(function() {
         // 初始化时设置车型
         updateCarType();
         
-        // 当车牌号变化时更新车型
+        // 当车牌号变化时更新车型和保险日期
         $('#plate_number_select').change(function() {
             updateCarType();
+            updateInsurancePeriod();
         });
         
         function updateCarType() {
             var plateNumber = $('#plate_number_select').val();
             var carType = carTypes[plateNumber] || '';
             $('#car_type_display').val(carType);
+        }
+        
+        function updateInsurancePeriod() {
+            var plateNumber = $('#plate_number_select').val();
+            if (plateNumber) {
+                // 发送AJAX请求获取该车辆的最新保险记录
+                $.ajax({
+                    url: "{{ url_for('official_car.get_latest_insurance') }}",
+                    type: "GET",
+                    data: { plate_number: plateNumber },
+                    success: function(response) {
+                        if (response.success) {
+                            // 如果有保险记录，使用计算的下一年保险期限
+                            $('#insurance_period').val(response.insurance_period);
+                        }
+                    }
+                });
+            }
         }
     });
 </script>
