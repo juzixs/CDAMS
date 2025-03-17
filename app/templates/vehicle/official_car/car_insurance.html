@@ -16,7 +16,7 @@
                         <a href="{{ url_for('official_car.add_insurance') }}" class="btn btn-primary btn-sm ml-2">
                             <i class="fas fa-plus"></i> 添加记录
                         </a>
-                        <a href="{{ url_for('official_car.export_insurance', search=request.args.get('search', '')) }}" class="btn btn-success btn-sm ml-2">
+                        <a href="{{ url_for('official_car.export_insurance', search=request.args.get('search', ''), year=request.args.get('year', '')) }}" class="btn btn-success btn-sm ml-2">
                             <i class="fas fa-file-excel"></i> 导出Excel
                         </a>
                     </div>
@@ -29,7 +29,15 @@
                         </div>
                         <div class="card-body">
                             <form method="get" action="{{ url_for('official_car.car_insurance') }}" class="row row-cols-1 row-cols-sm-2 row-cols-md-6 g-2">
-                                <div class="col-md-4">
+                                <div class="col-md-3">
+                                    <select name="year" class="form-select form-select-sm">
+                                        <option value="">全部年份</option>
+                                        {% for y in years %}
+                                        <option value="{{ y }}" {% if y|string == current_year %}selected{% endif %}>{{ y }}年</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
                                     <input type="text" name="search" class="form-control form-control-sm" placeholder="搜索车牌号或车型..." value="{{ request.args.get('search', '') }}">
                                 </div>
                                 <div class="col-md-2">
@@ -114,7 +122,7 @@
                         <ul class="pagination pagination-sm justify-content-center flex-wrap mt-3">
                             {% if pagination.page > 1 %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=pagination.page-1, search=request.args.get('search', '')) }}">上一页</a>
+                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=pagination.page-1, search=request.args.get('search', ''), year=request.args.get('year', '')) }}">上一页</a>
                             </li>
                             {% else %}
                             <li class="page-item disabled">
@@ -124,13 +132,13 @@
                             
                             {% for p in range(1, pagination.pages + 1) %}
                             <li class="page-item {% if p == pagination.page %}active{% endif %}">
-                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=p, search=request.args.get('search', '')) }}">{{ p }}</a>
+                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=p, search=request.args.get('search', ''), year=request.args.get('year', '')) }}">{{ p }}</a>
                             </li>
                             {% endfor %}
                             
                             {% if pagination.page < pagination.pages %}
                             <li class="page-item">
-                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=pagination.page+1, search=request.args.get('search', '')) }}">下一页</a>
+                                <a class="page-link" href="{{ url_for('official_car.car_insurance', page=pagination.page+1, search=request.args.get('search', ''), year=request.args.get('year', '')) }}">下一页</a>
                             </li>
                             {% else %}
                             <li class="page-item disabled">

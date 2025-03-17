@@ -1053,6 +1053,7 @@ def car_insurance():
     page = request.args.get('page', 1, type=int)
     per_page = 10
     search = request.args.get('search', '')
+    year = request.args.get('year', '')
     
     # 构建查询
     query = CarInsurance.query
@@ -1063,13 +1064,22 @@ def car_insurance():
             (CarInsurance.car_type.ilike(f'%{search}%'))
         )
     
+    if year:
+        query = query.filter(db.extract('year', CarInsurance.renewal_date) == year)
+    
+    # 获取所有年份
+    all_years = db.session.query(db.extract('year', CarInsurance.renewal_date)).distinct().order_by(db.extract('year', CarInsurance.renewal_date).desc()).all()
+    years = [int(year[0]) for year in all_years if year[0]]
+    
     # 按续保日期降序排序，当续保日期相同时，按创建时间降序排序（新添加的在前）
     records = query.order_by(CarInsurance.renewal_date.desc(), CarInsurance.created_at.desc()).paginate(page=page, per_page=per_page)
     
     return render_template('vehicle/official_car/car_insurance.html', 
                           title='车辆保险', 
                           records=records.items,
-                          pagination=records)
+                          pagination=records,
+                          years=years,
+                          current_year=year)
 
 @bp.route('/add_insurance', methods=['GET', 'POST'])
 @login_required
@@ -1234,6 +1244,7 @@ def export_insurance():
     """导出车辆保险记录"""
     # 获取查询参数
     search = request.args.get('search', '')
+    year = request.args.get('year', '')
     
     # 构建查询
     query = CarInsurance.query
@@ -1243,6 +1254,9 @@ def export_insurance():
             (CarInsurance.plate_number.ilike(f'%{search}%')) |
              (CarInsurance.car_type.ilike(f'%{search}%'))
         )
+    
+    if year:
+        query = query.filter(db.extract('year', CarInsurance.renewal_date) == year)
     
     # 按续保日期升序排序，当续保日期相同时，按创建时间升序排序（旧添加的在前）
     records = query.order_by(CarInsurance.renewal_date.asc(), CarInsurance.created_at.asc()).all()
