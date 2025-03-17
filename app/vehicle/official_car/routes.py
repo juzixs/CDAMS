@@ -1361,4 +1361,117 @@ def get_latest_insurance():
         'insurance_period': insurance_period,
         'has_previous_insurance': last_insurance is not None,
         'previous_end_date': last_insurance.insurance_end_date.strftime('%Y-%m-%d') if last_insurance else None
-    }) 
+    })
+
+@bp.route('/export_cars')
+@login_required
+def export_cars():
+    """导出车辆信息"""
+    # 获取查询参数
+    usage_nature = request.args.get('usage_nature', '')
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped)
+    
+    if usage_nature:
+        query = query.filter(OfficialCar.usage_nature == usage_nature)
+    
+    if search:
+        query = query.filter(
+            (OfficialCar.asset_number.ilike(f'%{search}%')) |
+            (OfficialCar.plate_number.ilike(f'%{search}%')) |
+            (OfficialCar.brand.ilike(f'%{search}%')) |
+            (OfficialCar.asset_description.ilike(f'%{search}%')) |
+            (OfficialCar.model.ilike(f'%{search}%')) |
+            (OfficialCar.car_model.ilike(f'%{search}%')) |
+            (OfficialCar.car_type.ilike(f'%{search}%')) |
+            (OfficialCar.responsible_person.ilike(f'%{search}%')) |
+            (OfficialCar.usage_nature.ilike(f'%{search}%'))
+        )
+    
+    # 按添加时间升序排序（新添加的在下）
+    cars = query.order_by(OfficialCar.created_at).all()
+    
+    # 获取每辆车的最新保险信息
+    car_insurance_info = {}
+    for car in cars:
+        latest_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+        if latest_insurance:
+            car_insurance_info[car.id] = f"{latest_insurance.insurance_start_date.strftime('%Y-%m-%d')}至{latest_insurance.insurance_end_date.strftime('%Y-%m-%d')}"
+        else:
+            car_insurance_info[car.id] = '-'
+    
+    # 创建DataFrame
+    data = []
+    for i, car in enumerate(cars, 1):
+        data.append({
+            '序号': i,
+            '资产编号': car.asset_number,
+            '卡片编号': car.card_number or '-',
+            '品牌': car.brand or '-',
+            '资产描述': car.asset_description or '-',
+            '规格型号': car.model or '-',
+            '原值': '{:.2f}'.format(float(car.original_value)) if car.original_value else '-',
+            '经营用车': car.is_business_car or '-',
+            '车牌号': car.plate_number or '-',
+            '车辆型号': car.car_model or '-',
+            '登记时间': car.registration_time.strftime('%Y-%m-%d') if car.registration_time else '-',
+            '座位数': car.seat_count or '-',
+            '排气量': car.displacement or '-',
+            '责任人': car.responsible_person or '-',
+            '使用性质': car.usage_nature or '-',
+            '车型': car.car_type or '-',
+            '保险日期': car_insurance_info[car.id]
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    
+    # 指定sheet名称
+    sheet_name = '车辆信息'
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)  # 从第3行开始写入数据
+    
+    # 获取工作簿和工作表对象
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+    
+    # 设置标题格式
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+    
+    # 合并单元格并写入标题
+    worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆信息', title_format)
+    
+    # 添加导出时间
+    date_format = workbook.add_format({
+        'align': 'right',
+        'font_size': 10
+    })
+    export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+    
+    # 自动调整列宽
+    for idx, col in enumerate(df.columns):
+        column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+        worksheet.set_column(idx, idx, column_width + 2)
+    
+    writer.close()
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f'车辆信息_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ) 

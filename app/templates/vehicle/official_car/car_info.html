@@ -11,9 +11,9 @@
             <a href="{{ url_for('official_car.add_car') }}" class="btn btn-primary btn-sm ml-2">
                 <i class="fas fa-plus"></i> 新增车辆
             </a>
-            <button type="button" class="btn btn-success btn-sm ml-2" data-bs-toggle="modal" data-bs-target="#importModal">
-                <i class="fas fa-file-import"></i> 导入Excel
-            </button>
+            <a href="{{ url_for('official_car.export_cars', search=request.args.get('search', ''), usage_nature=request.args.get('usage_nature', '')) }}" class="btn btn-success btn-sm ml-2">
+                <i class="fas fa-file-excel"></i> 导出Excel
+            </a>
         </div>
     </div>
 
@@ -223,31 +223,4 @@
     </div>
 </div>
 
-<!-- 导入Excel模态框 -->
-<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="importModalLabel">导入车辆信息</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form action="{{ url_for('official_car.import_cars') }}" method="post" enctype="multipart/form-data">
-                <div class="modal-body">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label for="importFile" class="form-label">选择Excel文件</label>
-                        <input type="file" class="form-control form-control-sm" id="importFile" name="file" accept=".xlsx,.xls" required>
-                    </div>
-                    <div class="alert alert-info py-2 small">
-                        <p class="mb-0">Excel文件应包含以下列：资产编号（必填）、卡片编号、品牌、资产名称、规格型号、原值、使用状况、车牌号、车型、注册登记时间、座位数、排量、负责人、使用性质</p>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">取消</button>
-                    <button type="submit" class="btn btn-primary btn-sm">导入</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 {% endblock %} 
