@@ -97,42 +97,42 @@
                 <input type="hidden" name="action" id="batchAction" value="">
                 <input type="hidden" name="exit_type" value="{{ active_tab }}">
                 
-                <table class="table table-striped">
+                <table class="table table-striped text-center">
                     <thead>
                         <tr>
-                            <th><input type="checkbox" id="selectAll"></th>
-                            <th>申请部门</th>
-                            <th>发起人</th>
-                            <th>出门证编号</th>
-                            <th>申请出厂日期</th>
-                            <th>接收单位</th>
-                            <th>出厂物品分类</th>
-                            <th>车型</th>
-                            <th>物流方式</th>
-                            <th>物流公司名称</th>
-                            <th>司机姓名</th>
-                            <th>车牌号</th>
-                            <th>司机联系电话</th>
-                            <th>物流单号</th>
-                            <th>审核人</th>
-                            <th>发放人</th>
-                            <th>审批人</th>
-                            <th>门卫</th>
-                            <th>确认出厂日期</th>
-                            <th>备注</th>
-                            <th>操作</th>
+                            <th class="text-center"><input type="checkbox" id="selectAll"></th>
+                            <th class="text-center">申请部门</th>
+                            <th class="text-center">发起人</th>
+                            <th class="text-center">出门证编号</th>
+                            <th class="text-center">申请出厂日期</th>
+                            <th class="text-center">接收单位</th>
+                            <th class="text-center">出厂物品分类</th>
+                            <th class="text-center">车型</th>
+                            <th class="text-center">物流方式</th>
+                            <th class="text-center">物流公司名称</th>
+                            <th class="text-center">司机姓名</th>
+                            <th class="text-center">车牌号</th>
+                            <th class="text-center">司机联系电话</th>
+                            <th class="text-center">物流单号</th>
+                            <th class="text-center">审核人</th>
+                            <th class="text-center">发放人</th>
+                            <th class="text-center">审批人</th>
+                            <th class="text-center">门卫</th>
+                            <th class="text-center">确认出厂日期</th>
+                            <th class="text-center">备注</th>
+                            <th class="text-center">操作</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for record in records.items %}
                         <tr>
-                            <td><input type="checkbox" name="record_ids[]" value="{{ record.id }}"></td>
-                            <td>{{ record.department or '-' }}</td>
-                            <td>{{ record.initiator or '-' }}</td>
-                            <td>{{ record.certificate_number or '-' }}</td>
-                            <td>{{ record.exit_time.strftime('%Y-%m-%d') if record.exit_time else '-' }}</td>
-                            <td>{{ record.company or '-' }}</td>
-                            <td>
+                            <td class="text-center"><input type="checkbox" name="record_ids[]" value="{{ record.id }}"></td>
+                            <td class="text-center">{{ record.department or '-' }}</td>
+                            <td class="text-center">{{ record.initiator or '-' }}</td>
+                            <td class="text-center">{{ record.certificate_number or '-' }}</td>
+                            <td class="text-center">{{ record.exit_time.strftime('%Y-%m-%d') if record.exit_time else '-' }}</td>
+                            <td class="text-center">{{ record.company or '-' }}</td>
+                            <td class="text-center">
                                 {% if record.item_category == 'product' %}
                                 产成品交付
                                 {% elif record.item_category == 'outsourcing' %}
@@ -145,7 +145,7 @@
                                 {{ record.item_category or '-' }}
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="text-center">
                                 {% if record.vehicle_type == 'truck' %}
                                 货车
                                 {% elif record.vehicle_type == 'tractor' %}
@@ -158,7 +158,7 @@
                                 {{ record.vehicle_type or '-' }}
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="text-center">
                                 {% if record.logistics_type == 'company' %}
                                 公司自有车辆
                                 {% elif record.logistics_type == 'logistics' %}
@@ -171,18 +171,18 @@
                                 {{ record.logistics_type or '-' }}
                                 {% endif %}
                             </td>
-                            <td>{{ record.logistics_company or '-' }}</td>
-                            <td>{{ record.driver_name or '-' }}</td>
-                            <td>{{ record.plate_number or '-' }}</td>
-                            <td>{{ record.phone or '-' }}</td>
-                            <td>{{ record.logistics_number or '-' }}</td>
-                            <td>{{ record.reviewer or '-' }}</td>
-                            <td>{{ record.issuer or '-' }}</td>
-                            <td>{{ record.approver_text or '-' }}</td>
-                            <td>{{ record.guard or '-' }}</td>
-                            <td>{{ record.confirmed_exit_time.strftime('%Y-%m-%d') if record.confirmed_exit_time else '-' }}</td>
-                            <td>{{ record.remarks or '-' }}</td>
-                            <td>
+                            <td class="text-center">{{ record.logistics_company or '-' }}</td>
+                            <td class="text-center">{{ record.driver_name or '-' }}</td>
+                            <td class="text-center">{{ record.plate_number or '-' }}</td>
+                            <td class="text-center">{{ record.phone or '-' }}</td>
+                            <td class="text-center">{{ record.logistics_number or '-' }}</td>
+                            <td class="text-center">{{ record.reviewer or '-' }}</td>
+                            <td class="text-center">{{ record.issuer or '-' }}</td>
+                            <td class="text-center">{{ record.approver_text or '-' }}</td>
+                            <td class="text-center">{{ record.guard or '-' }}</td>
+                            <td class="text-center">{{ record.confirmed_exit_time.strftime('%Y-%m-%d') if record.confirmed_exit_time else '-' }}</td>
+                            <td class="text-center">{{ record.remarks or '-' }}</td>
+                            <td class="text-center">
                                 <div class="btn-group">
                                     <a href="{{ url_for('vehicle_exit.edit', id=record.id) }}" class="btn btn-sm btn-primary">
                                         <i class="fas fa-edit"></i>

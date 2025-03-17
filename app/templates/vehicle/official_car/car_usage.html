@@ -59,60 +59,60 @@
                                     </a>
                                 </div>
                             </form>
-                        </div>
-                    </div>
+        </div>
+    </div>
 
                     <!-- 数据表格 -->
-                    <div class="card">
-                        <div class="card-header">
+    <div class="card">
+        <div class="card-header">
                             <h4 class="card-title fs-5">使用记录列表</h4>
-                        </div>
-                        <div class="card-body">
+        </div>
+        <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-striped table-hover table-sm align-middle">
+                                <table class="table table-striped table-hover table-sm align-middle text-center">
                                     <thead class="align-middle">
                                         <tr>
-                                            <th class="align-middle">序号</th>
-                                            <th class="align-middle">申请使用部门</th>
-                                            <th class="align-middle">使用车牌号</th>
-                                            <th class="align-middle">出车日期</th>
-                                            <th class="align-middle">出车时间</th>
-                                            <th class="d-none d-md-table-cell align-middle">出车里程</th>
-                                            <th class="align-middle">出车去向及事由</th>
-                                            <th class="align-middle">收车时间</th>
-                                            <th class="d-none d-md-table-cell align-middle">收车里程</th>
-                                            <th class="d-none d-lg-table-cell align-middle">使用时长</th>
-                                            <th class="align-middle">驾驶员</th>
-                                            <th class="d-none d-lg-table-cell align-middle">随同人员</th>
-                                            <th class="d-none d-xl-table-cell align-middle">加油</th>
-                                            <th class="d-none d-xl-table-cell align-middle">维修</th>
-                                            <th class="d-none d-xl-table-cell align-middle">过路过桥费</th>
-                                            <th class="d-none d-xl-table-cell align-middle">停车费</th>
-                                            <th class="d-none d-xl-table-cell align-middle">交通事故、违章</th>
-                                            <th class="align-middle">操作</th>
+                                            <th class="align-middle text-center">序号</th>
+                                            <th class="align-middle text-center">申请使用部门</th>
+                                            <th class="align-middle text-center">使用车牌号</th>
+                                            <th class="align-middle text-center">出车日期</th>
+                                            <th class="align-middle text-center">出车时间</th>
+                                            <th class="d-none d-md-table-cell align-middle text-center">出车里程</th>
+                                            <th class="align-middle text-center">出车去向及事由</th>
+                                            <th class="align-middle text-center">收车时间</th>
+                                            <th class="d-none d-md-table-cell align-middle text-center">收车里程</th>
+                                            <th class="d-none d-lg-table-cell align-middle text-center">使用时长</th>
+                                            <th class="align-middle text-center">驾驶员</th>
+                                            <th class="d-none d-lg-table-cell align-middle text-center">随同人员</th>
+                                            <th class="d-none d-xl-table-cell align-middle text-center">加油</th>
+                                            <th class="d-none d-xl-table-cell align-middle text-center">维修</th>
+                                            <th class="d-none d-xl-table-cell align-middle text-center">过路过桥费</th>
+                                            <th class="d-none d-xl-table-cell align-middle text-center">停车费</th>
+                                            <th class="d-none d-xl-table-cell align-middle text-center">交通事故、违章</th>
+                                            <th class="align-middle text-center">操作</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for record in records %}
                                         <tr>
-                                            <td class="align-middle">{{ loop.index + (page - 1) * per_page }}</td>
-                                            <td class="align-middle">{{ record.department }}</td>
-                                            <td class="align-middle">{{ record.plate_number }}</td>
-                                            <td class="align-middle">{{ record.departure_date.strftime('%Y-%m-%d') }}</td>
-                                            <td class="align-middle">{{ record.departure_time.strftime('%H:%M') }}</td>
-                                            <td class="d-none d-md-table-cell align-middle">{{ record.departure_mileage if record.departure_mileage else '-' }}</td>
-                                            <td class="align-middle">{{ record.destination_purpose if record.destination_purpose else '-' }}</td>
-                                            <td class="align-middle">{{ record.return_time.strftime('%Y-%m-%d %H:%M') if record.return_time else '-' }}</td>
-                                            <td class="d-none d-md-table-cell align-middle">{{ record.return_mileage if record.return_mileage else '-' }}</td>
-                                            <td class="d-none d-lg-table-cell align-middle">{{ record.usage_duration if record.usage_duration else '-' }}</td>
-                                            <td class="align-middle">{{ record.driver if record.driver else '-' }}</td>
-                                            <td class="d-none d-lg-table-cell align-middle">{{ record.passengers if record.passengers else '-' }}</td>
-                                            <td class="d-none d-xl-table-cell align-middle">{{ '是' if record.refueling else '否' }}</td>
-                                            <td class="d-none d-xl-table-cell align-middle">{{ record.maintenance if record.maintenance else '-' }}</td>
-                                            <td class="d-none d-xl-table-cell align-middle">{{ record.toll_fee if record.toll_fee else '-' }}</td>
-                                            <td class="d-none d-xl-table-cell align-middle">{{ record.parking_fee if record.parking_fee else '-' }}</td>
-                                            <td class="d-none d-xl-table-cell align-middle">{{ record.accident_violation if record.accident_violation else '-' }}</td>
-                                            <td class="align-middle">
+                                            <td class="align-middle text-center">{{ loop.index + (page - 1) * per_page }}</td>
+                                            <td class="align-middle text-center">{{ record.department }}</td>
+                                            <td class="align-middle text-center">{{ record.plate_number }}</td>
+                                            <td class="align-middle text-center">{{ record.departure_date.strftime('%Y-%m-%d') }}</td>
+                                            <td class="align-middle text-center">{{ record.departure_time.strftime('%H:%M') }}</td>
+                                            <td class="d-none d-md-table-cell align-middle text-center">{{ record.departure_mileage if record.departure_mileage else '-' }}</td>
+                                            <td class="align-middle text-center">{{ record.destination_purpose if record.destination_purpose else '-' }}</td>
+                                            <td class="align-middle text-center">{{ record.return_time.strftime('%Y-%m-%d %H:%M') if record.return_time else '-' }}</td>
+                                            <td class="d-none d-md-table-cell align-middle text-center">{{ record.return_mileage if record.return_mileage else '-' }}</td>
+                                            <td class="d-none d-lg-table-cell align-middle text-center">{{ record.usage_duration if record.usage_duration else '-' }}</td>
+                                            <td class="align-middle text-center">{{ record.driver if record.driver else '-' }}</td>
+                                            <td class="d-none d-lg-table-cell align-middle text-center">{{ record.passengers if record.passengers else '-' }}</td>
+                                            <td class="d-none d-xl-table-cell align-middle text-center">{{ '是' if record.refueling else '否' }}</td>
+                                            <td class="d-none d-xl-table-cell align-middle text-center">{{ record.maintenance if record.maintenance else '-' }}</td>
+                                            <td class="d-none d-xl-table-cell align-middle text-center">{{ record.toll_fee if record.toll_fee else '-' }}</td>
+                                            <td class="d-none d-xl-table-cell align-middle text-center">{{ record.parking_fee if record.parking_fee else '-' }}</td>
+                                            <td class="d-none d-xl-table-cell align-middle text-center">{{ record.accident_violation if record.accident_violation else '-' }}</td>
+                                            <td class="align-middle text-center">
                                                 <div class="btn-group btn-group-sm">
                                                     <a href="{{ url_for('official_car.edit_usage_record', record_id=record.id) }}" class="btn btn-info btn-sm">
                                                         <i class="fas fa-edit"></i> 编辑

@@ -55,13 +55,23 @@ def index():
     pagination = query.paginate(page=page, per_page=per_page)
     cars = pagination.items
     
+    # 获取每辆车的最新保险信息
+    car_insurance_info = {}
+    for car in cars:
+        latest_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+        if latest_insurance:
+            car_insurance_info[car.id] = f"{latest_insurance.insurance_start_date.strftime('%Y-%m-%d')}至{latest_insurance.insurance_end_date.strftime('%Y-%m-%d')}"
+        else:
+            car_insurance_info[car.id] = '-'
+    
     return render_template('vehicle/official_car/index.html', 
                           title='公务车辆',
                           cars=cars,
                           pagination=pagination,
                           page=page,
                           per_page=per_page,
-                          usage_natures=usage_natures)
+                          usage_natures=usage_natures,
+                          car_insurance_info=car_insurance_info)
 
 @bp.route('/car_info')
 @login_required
@@ -106,13 +116,23 @@ def car_info():
     pagination = query.paginate(page=page, per_page=per_page)
     cars = pagination.items
     
+    # 获取每辆车的最新保险信息
+    car_insurance_info = {}
+    for car in cars:
+        latest_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+        if latest_insurance:
+            car_insurance_info[car.id] = f"{latest_insurance.insurance_start_date.strftime('%Y-%m-%d')}至{latest_insurance.insurance_end_date.strftime('%Y-%m-%d')}"
+        else:
+            car_insurance_info[car.id] = '-'
+    
     return render_template('vehicle/official_car/car_info.html', 
                           title='车辆信息',
                           cars=cars,
                           pagination=pagination,
                           page=page,
                           per_page=per_page,
-                          usage_natures=usage_natures)
+                          usage_natures=usage_natures,
+                          car_insurance_info=car_insurance_info)
 
 @bp.route('/add_car', methods=['GET', 'POST'])
 @login_required
