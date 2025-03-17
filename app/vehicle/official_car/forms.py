@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, FloatField, BooleanField, DateTimeField, IntegerField, TextAreaField, SelectField, SubmitField
-from wtforms.validators import DataRequired, Optional, NumberRange
+from wtforms import StringField, FloatField, BooleanField, DateTimeField, IntegerField, TextAreaField, SelectField, SubmitField, DateField
+from wtforms.validators import DataRequired, Optional, NumberRange, ValidationError
+from datetime import datetime
 
 class OfficialCarForm(FlaskForm):
     """公务车辆信息表单"""
@@ -93,4 +94,23 @@ class CarFuelRecordForm(FlaskForm):
     invoice_file = FileField('发票', validators=[Optional(), FileAllowed(['jpg', 'png', 'pdf'], '只允许上传JPG, PNG和PDF文件')])
     responsible_person = StringField('负责人')
     remarks = TextAreaField('备注')
-    submit = SubmitField('提交') 
+    submit = SubmitField('提交')
+
+class CarInsuranceForm(FlaskForm):
+    """车辆保险表单"""
+    plate_number = StringField('车牌号', validators=[DataRequired()])
+    car_type = StringField('车型')
+    amount = FloatField('金额', validators=[DataRequired()])
+    insurance_period = StringField('保险日期', validators=[DataRequired()], 
+                                  description='格式：YYYY-MM-DD至YYYY-MM-DD')
+    renewal_date = DateField('续保日期', validators=[DataRequired()], format='%Y-%m-%d')
+    submit = SubmitField('保存')
+    
+    def validate_insurance_period(self, field):
+        """验证保险日期格式"""
+        try:
+            start_date_str, end_date_str = field.data.split('至')
+            datetime.strptime(start_date_str, '%Y-%m-%d')
+            datetime.strptime(end_date_str, '%Y-%m-%d')
+        except ValueError:
+            raise ValidationError('保险日期格式不正确，请使用YYYY-MM-DD至YYYY-MM-DD格式') 

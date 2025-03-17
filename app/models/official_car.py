@@ -50,6 +50,7 @@ class OfficialCar(db.Model):
     usage_records = db.relationship('CarUsageRecord', backref='car', lazy='dynamic', cascade='all, delete-orphan')
     maintenance_records = db.relationship('CarMaintenanceRecord', backref='car', lazy='dynamic', cascade='all, delete-orphan')
     fuel_records = db.relationship('CarFuelRecord', backref='car', lazy='dynamic', cascade='all, delete-orphan')
+    insurance_records = db.relationship('CarInsurance', backref='car', lazy='dynamic', cascade='all, delete-orphan')
     
     def __repr__(self):
         return f'<OfficialCar {self.plate_number} {self.asset_number}>'
@@ -158,4 +159,23 @@ class CarFuelRecord(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
     
     def __repr__(self):
-        return f'<CarFuelRecord {self.id} {self.car_id}>' 
+        return f'<CarFuelRecord {self.id} {self.car_id}>'
+
+class CarInsurance(db.Model):
+    """车辆保险记录模型"""
+    __tablename__ = 'car_insurance'
+
+    id = db.Column(db.Integer, primary_key=True)
+    car_id = db.Column(db.Integer, db.ForeignKey('official_cars.id'), nullable=False, comment='车辆ID')
+    plate_number = db.Column(db.String(20), nullable=False, comment='车牌号')
+    car_type = db.Column(db.String(100), comment='车型')
+    amount = db.Column(db.Float, nullable=False, comment='保险金额')
+    insurance_start_date = db.Column(db.Date, nullable=False, comment='保险开始日期')
+    insurance_end_date = db.Column(db.Date, nullable=False, comment='保险结束日期')
+    renewal_date = db.Column(db.Date, nullable=False, comment='续保日期')
+    
+    # 系统信息
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+    created_by = db.Column(db.Integer, comment='创建人ID')
+    updated_by = db.Column(db.Integer, comment='更新人ID') 

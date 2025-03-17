@@ -148,6 +148,9 @@
                                     <a href="{{ url_for('official_car.refuel_car', car_id=car.id) }}" class="btn btn-sm btn-info" title="加油">
                                         <i class="fas fa-gas-pump"></i>
                                     </a>
+                                    <a href="{{ url_for('official_car.add_insurance', plate_number=car.plate_number) }}" class="btn btn-sm btn-primary" title="续保">
+                                        <i class="fas fa-shield-alt"></i>
+                                    </a>
                                 </div>
                             </td>
                         </tr>

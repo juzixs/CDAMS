@@ -2,8 +2,8 @@ from flask import render_template, flash, redirect, url_for, request, jsonify, s
 from flask_login import login_required, current_user
 from app import db
 from app.vehicle.official_car import bp
-from app.models.official_car import OfficialCar, CarStatus, CarUsageRecord
-from app.vehicle.official_car.forms import OfficialCarForm, CarUsageRecordForm, CarReturnForm, CarUsageRecordFullForm
+from app.models.official_car import OfficialCar, CarStatus, CarUsageRecord, CarMaintenanceRecord, CarFuelRecord, CarInsurance
+from app.vehicle.official_car.forms import OfficialCarForm, CarUsageRecordForm, CarReturnForm, CarUsageRecordFullForm, CarMaintenanceRecordForm, CarFuelRecordForm, CarInsuranceForm
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta, time
@@ -1018,6 +1018,245 @@ def export_usage_records():
     
     # 生成文件名
     filename = f'车辆使用记录_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+@bp.route('/car_insurance')
+@login_required
+def car_insurance():
+    """车辆保险记录页面"""
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarInsurance.query
+    
+    if search:
+        query = query.filter(
+            (CarInsurance.plate_number.ilike(f'%{search}%')) |
+            (CarInsurance.car_type.ilike(f'%{search}%'))
+        )
+    
+    # 按续保日期降序排序
+    records = query.order_by(CarInsurance.renewal_date.desc()).paginate(page=page, per_page=per_page)
+    
+    return render_template('vehicle/official_car/car_insurance.html', 
+                          title='车辆保险', 
+                          records=records.items,
+                          pagination=records)
+
+@bp.route('/add_insurance', methods=['GET', 'POST'])
+@login_required
+def add_insurance():
+    """添加车辆保险记录"""
+    form = CarInsuranceForm()
+    
+    # 获取车牌号参数（如果有）
+    plate_number = request.args.get('plate_number', '')
+    if plate_number:
+        car = OfficialCar.query.filter_by(plate_number=plate_number).first()
+        if car:
+            form.plate_number.data = car.plate_number
+            form.car_type.data = car.car_type
+            
+            # 查找最近的保险记录
+            last_insurance = CarInsurance.query.filter_by(car_id=car.id).order_by(CarInsurance.insurance_end_date.desc()).first()
+            
+            # 设置默认保险期限
+            today = datetime.now().date()
+            if last_insurance:
+                # 如果有上一次保险记录，使用其结束日期后一天作为开始日期
+                start_date = last_insurance.insurance_end_date + timedelta(days=1)
+                end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+            else:
+                # 如果没有保险记录，使用当前日期作为开始日期
+                start_date = today
+                end_date = start_date.replace(year=start_date.year + 1) - timedelta(days=1)
+                
+            form.insurance_period.data = f"{start_date.strftime('%Y-%m-%d')}至{end_date.strftime('%Y-%m-%d')}"
+            form.renewal_date.data = today
+    
+    if form.validate_on_submit():
+        # 根据车牌号查找车辆
+        car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        
+        if not car:
+            flash('未找到对应车牌号的车辆', 'danger')
+            return render_template('vehicle/official_car/add_insurance.html', 
+                                  title='添加车辆保险', 
+                                  form=form)
+        
+        # 解析保险日期
+        start_date_str, end_date_str = form.insurance_period.data.split('至')
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+        # 创建保险记录
+        insurance = CarInsurance(
+            car_id=car.id,
+            plate_number=car.plate_number,
+            car_type=car.car_type,
+            amount=form.amount.data,
+            insurance_start_date=start_date,
+            insurance_end_date=end_date,
+            renewal_date=form.renewal_date.data,
+            created_by=current_user.id
+        )
+        
+        db.session.add(insurance)
+        db.session.commit()
+        
+        flash('车辆保险记录已添加', 'success')
+        return redirect(url_for('official_car.car_insurance'))
+    
+    return render_template('vehicle/official_car/add_insurance.html', 
+                          title='添加车辆保险', 
+                          form=form)
+
+@bp.route('/edit_insurance/<int:insurance_id>', methods=['GET', 'POST'])
+@login_required
+def edit_insurance(insurance_id):
+    """编辑车辆保险记录"""
+    insurance = CarInsurance.query.get_or_404(insurance_id)
+    form = CarInsuranceForm()
+    
+    if form.validate_on_submit():
+        # 根据车牌号查找车辆
+        car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        
+        if not car:
+            flash('未找到对应车牌号的车辆', 'danger')
+            return render_template('vehicle/official_car/edit_insurance.html', 
+                                  title='编辑车辆保险', 
+                                  form=form,
+                                  insurance=insurance)
+        
+        # 解析保险日期
+        start_date_str, end_date_str = form.insurance_period.data.split('至')
+        start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        
+        # 更新保险记录
+        insurance.car_id = car.id
+        insurance.plate_number = car.plate_number
+        insurance.car_type = car.car_type
+        insurance.amount = form.amount.data
+        insurance.insurance_start_date = start_date
+        insurance.insurance_end_date = end_date
+        insurance.renewal_date = form.renewal_date.data
+        insurance.updated_by = current_user.id
+        insurance.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        flash('车辆保险记录已更新', 'success')
+        return redirect(url_for('official_car.car_insurance'))
+    
+    # 预填充表单
+    if request.method == 'GET':
+        form.plate_number.data = insurance.plate_number
+        form.car_type.data = insurance.car_type
+        form.amount.data = insurance.amount
+        form.insurance_period.data = f"{insurance.insurance_start_date.strftime('%Y-%m-%d')}至{insurance.insurance_end_date.strftime('%Y-%m-%d')}"
+        form.renewal_date.data = insurance.renewal_date
+    
+    return render_template('vehicle/official_car/edit_insurance.html', 
+                          title='编辑车辆保险', 
+                          form=form,
+                          insurance=insurance)
+
+@bp.route('/delete_insurance/<int:insurance_id>', methods=['POST'])
+@login_required
+def delete_insurance(insurance_id):
+    """删除车辆保险记录"""
+    insurance = CarInsurance.query.get_or_404(insurance_id)
+    
+    db.session.delete(insurance)
+    db.session.commit()
+    
+    flash('车辆保险记录已删除', 'success')
+    return redirect(url_for('official_car.car_insurance'))
+
+@bp.route('/export_insurance')
+@login_required
+def export_insurance():
+    """导出车辆保险记录"""
+    # 获取查询参数
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarInsurance.query
+    
+    if search:
+        query = query.filter(
+            (CarInsurance.plate_number.ilike(f'%{search}%')) |
+            (CarInsurance.car_type.ilike(f'%{search}%'))
+        )
+    
+    # 按续保日期降序排序
+    records = query.order_by(CarInsurance.renewal_date.desc()).all()
+    
+    # 创建DataFrame
+    data = []
+    for i, record in enumerate(records, 1):
+        data.append({
+            '序号': i,
+            '车牌号': record.plate_number,
+            '车型': record.car_type or '-',
+            '金额': '{:.2f}'.format(record.amount),
+            '保险日期': f"{record.insurance_start_date.strftime('%Y-%m-%d')}至{record.insurance_end_date.strftime('%Y-%m-%d')}",
+            '续保日期': record.renewal_date.strftime('%Y-%m-%d')
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    
+    # 指定sheet名称
+    sheet_name = '车辆保险记录'
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)  # 从第3行开始写入数据
+    
+    # 获取工作簿和工作表对象
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+    
+    # 设置标题格式
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+    
+    # 合并单元格并写入标题
+    worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆保险记录', title_format)
+    
+    # 添加导出时间
+    date_format = workbook.add_format({
+        'align': 'right',
+        'font_size': 10
+    })
+    export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+    
+    # 自动调整列宽
+    for idx, col in enumerate(df.columns):
+        column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+        worksheet.set_column(idx, idx, column_width + 2)
+    
+    writer.close()
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f'车辆保险记录_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
     
     return send_file(
         output, 
