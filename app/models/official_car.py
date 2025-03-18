@@ -105,29 +105,25 @@ class CarMaintenanceRecord(db.Model):
     car_id = db.Column(db.Integer, db.ForeignKey('official_cars.id'), nullable=False, comment='车辆ID')
     
     # 维修保养信息
-    maintenance_type = db.Column(db.String(20), comment='类型：maintenance（保养）, repair（维修）')
-    maintenance_time = db.Column(db.DateTime, nullable=False, comment='维修保养时间')
-    maintenance_location = db.Column(db.String(100), comment='维修保养地点')
-    maintenance_items = db.Column(db.Text, comment='维修保养项目')
-    current_mileage = db.Column(db.Float, comment='当前里程')
-    
-    # 费用信息
-    cost = db.Column(db.Float, comment='费用')
-    invoice_number = db.Column(db.String(50), comment='发票号码')
-    invoice_file = db.Column(db.String(255), comment='发票文件路径')
-    
-    # 负责人信息
-    responsible_person = db.Column(db.String(50), comment='负责人')
-    
-    # 备注
+    application_time = db.Column(db.Date, nullable=False, comment='申请时间')
+    car_type = db.Column(db.String(100), comment='车型')
+    plate_number = db.Column(db.String(20), nullable=False, comment='车牌号')
+    driver = db.Column(db.String(50), comment='驾驶员')
+    sender = db.Column(db.String(50), comment='送修人')
+    reason = db.Column(db.Text, comment='送修原因')
+    maintenance_location = db.Column(db.String(100), comment='维修厂')
+    cost = db.Column(db.Float, comment='维修费用')
+    completion_time = db.Column(db.Date, comment='完成时间')
     remarks = db.Column(db.Text, comment='备注')
     
     # 系统信息
     created_at = db.Column(db.DateTime, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
+    created_by = db.Column(db.Integer, comment='创建人ID')
+    updated_by = db.Column(db.Integer, comment='更新人ID')
     
     def __repr__(self):
-        return f'<CarMaintenanceRecord {self.id} {self.car_id}>'
+        return f'<CarMaintenanceRecord {self.id} {self.plate_number}>'
 
 class CarFuelRecord(db.Model):
     """车辆加油充值记录模型"""

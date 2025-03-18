@@ -3,13 +3,13 @@ from flask_login import login_required, current_user
 from app import db
 from app.vehicle.official_car import bp
 from app.models.official_car import OfficialCar, CarStatus, CarUsageRecord, CarMaintenanceRecord, CarFuelRecord, CarInsurance
-from app.vehicle.official_car.forms import OfficialCarForm, CarUsageRecordForm, CarReturnForm, CarUsageRecordFullForm, CarMaintenanceRecordForm, CarFuelRecordForm, CarInsuranceForm
+from app.vehicle.official_car.forms import OfficialCarForm, CarUsageRecordForm, CarReturnForm, CarUsageRecordFullForm, CarMaintenanceRecordForm, CarFuelRecordForm, CarInsuranceForm, CarMaintenanceCompleteForm
 from werkzeug.utils import secure_filename
 import os
 from datetime import datetime, timedelta, time
 import pandas as pd
 import uuid
-from sqlalchemy import desc
+from sqlalchemy import desc, extract
 from io import BytesIO
 
 @bp.route('/')
@@ -447,7 +447,290 @@ def car_usage():
 @bp.route('/car_maintenance')
 @login_required
 def car_maintenance():
-    return render_template('vehicle/official_car/car_maintenance.html', title='车辆维修保养')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+    
+    # 获取查询参数
+    year = request.args.get('year', '')
+    plate_number = request.args.get('plate_number', '')
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarMaintenanceRecord.query
+    
+    if year:
+        query = query.filter(extract('year', CarMaintenanceRecord.application_time) == int(year))
+    
+    if plate_number:
+        query = query.filter(CarMaintenanceRecord.plate_number == plate_number)
+    
+    if search:
+        query = query.filter(
+            (CarMaintenanceRecord.plate_number.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.car_type.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.driver.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.sender.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.reason.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.maintenance_location.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.remarks.ilike(f'%{search}%'))
+        )
+    
+    # 按申请时间降序排序（新申请的在上）
+    query = query.order_by(CarMaintenanceRecord.application_time.desc())
+    
+    # 分页
+    records = query.paginate(page=page, per_page=per_page)
+    
+    # 获取所有车辆的车牌号
+    all_cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    plate_numbers = [(car.plate_number, car.plate_number) for car in all_cars if car.plate_number]
+    
+    # 获取所有年份
+    current_year = datetime.now().year
+    years = [(str(year), str(year)) for year in range(current_year - 5, current_year + 1)]
+    years.reverse()  # 最新的年份在前
+    
+    return render_template('vehicle/official_car/car_maintenance.html', 
+                           title='车辆维修保养',
+                           records=records,
+                           plate_numbers=plate_numbers,
+                           years=years,
+                           year=year,
+                           plate_number=plate_number,
+                           search=search)
+
+@bp.route('/add_maintenance_record', methods=['GET', 'POST'])
+@login_required
+def add_maintenance_record():
+    form = CarMaintenanceRecordForm()
+    
+    # 获取所有车辆的车牌号
+    all_cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [('', '请选择车牌号')] + [(car.plate_number, car.plate_number) for car in all_cars if car.plate_number]
+    
+    if form.validate_on_submit():
+        # 获取车型
+        car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        car_type = car.car_type if car else ''
+        
+        record = CarMaintenanceRecord(
+            application_time=form.application_time.data,
+            car_type=car_type,
+            plate_number=form.plate_number.data,
+            driver=form.driver.data,
+            sender=form.sender.data,
+            reason=form.reason.data,
+            maintenance_location=form.maintenance_location.data,
+            cost=form.cost.data,
+            completion_time=form.completion_time.data,
+            remarks=form.remarks.data,
+            created_by=current_user.id
+        )
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        flash('维修保养记录已添加', 'success')
+        return redirect(url_for('official_car.car_maintenance'))
+    
+    # 设置默认日期为今天
+    if not form.application_time.data:
+        form.application_time.data = datetime.now()
+    
+    return render_template('vehicle/official_car/add_maintenance_record.html',
+                           title='添加维修保养记录',
+                           form=form,
+                           today=datetime.now())
+
+@bp.route('/edit_maintenance_record/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit_maintenance_record(id):
+    record = CarMaintenanceRecord.query.get_or_404(id)
+    form = CarMaintenanceRecordForm(obj=record)
+    
+    # 获取所有车辆的车牌号
+    all_cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
+    form.plate_number.choices = [('', '请选择车牌号')] + [(car.plate_number, car.plate_number) for car in all_cars if car.plate_number]
+    
+    if form.validate_on_submit():
+        # 获取车型
+        car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        car_type = car.car_type if car else ''
+        
+        record.application_time = form.application_time.data
+        record.car_type = car_type
+        record.plate_number = form.plate_number.data
+        record.driver = form.driver.data
+        record.sender = form.sender.data
+        record.reason = form.reason.data
+        record.maintenance_location = form.maintenance_location.data
+        record.cost = form.cost.data
+        record.completion_time = form.completion_time.data
+        record.remarks = form.remarks.data
+        record.updated_by = current_user.id
+        record.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        flash('维修保养记录已更新', 'success')
+        return redirect(url_for('official_car.car_maintenance'))
+    
+    return render_template('vehicle/official_car/add_maintenance_record.html',
+                           title='编辑维修保养记录',
+                           form=form,
+                           today=datetime.now())
+
+@bp.route('/complete_maintenance_record/<int:id>', methods=['GET', 'POST'])
+@login_required
+def complete_maintenance_record(id):
+    record = CarMaintenanceRecord.query.get_or_404(id)
+    form = CarMaintenanceCompleteForm(obj=record)
+    
+    if form.validate_on_submit():
+        record.cost = form.cost.data
+        record.completion_time = form.completion_time.data
+        record.remarks = form.remarks.data
+        record.updated_by = current_user.id
+        record.updated_at = datetime.now()
+        
+        db.session.commit()
+        
+        flash('维修保养记录已完成', 'success')
+        return redirect(url_for('official_car.car_maintenance'))
+    
+    return render_template('vehicle/official_car/complete_maintenance_record.html',
+                           title='完成维修保养记录',
+                           form=form,
+                           record=record,
+                           today=datetime.now())
+
+@bp.route('/delete_maintenance_record/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete_maintenance_record(id):
+    record = CarMaintenanceRecord.query.get_or_404(id)
+    
+    db.session.delete(record)
+    db.session.commit()
+    
+    flash('维修保养记录已删除', 'success')
+    return redirect(url_for('official_car.car_maintenance'))
+
+@bp.route('/export_maintenance_records')
+@login_required
+def export_maintenance_records():
+    # 获取查询参数
+    year = request.args.get('year', '')
+    plate_number = request.args.get('plate_number', '')
+    search = request.args.get('search', '')
+    
+    # 构建查询
+    query = CarMaintenanceRecord.query
+    
+    if year:
+        query = query.filter(extract('year', CarMaintenanceRecord.application_time) == int(year))
+    
+    if plate_number:
+        query = query.filter(CarMaintenanceRecord.plate_number == plate_number)
+    
+    if search:
+        query = query.filter(
+            (CarMaintenanceRecord.plate_number.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.car_type.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.driver.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.sender.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.reason.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.maintenance_location.ilike(f'%{search}%')) |
+            (CarMaintenanceRecord.remarks.ilike(f'%{search}%'))
+        )
+    
+    # 按申请时间降序排序
+    records = query.order_by(CarMaintenanceRecord.application_time.desc()).all()
+    
+    # 创建DataFrame
+    data = []
+    for i, record in enumerate(records, 1):
+        data.append({
+            '序号': i,
+            '申请时间': record.application_time.strftime('%Y-%m-%d') if record.application_time else '-',
+            '车型': record.car_type or '-',
+            '车牌号': record.plate_number or '-',
+            '驾驶员': record.driver or '-',
+            '送修人': record.sender or '-',
+            '送修原因': record.reason or '-',
+            '维修厂': record.maintenance_location or '-',
+            '维修费用': '{:.2f}'.format(float(record.cost)) if record.cost else '-',
+            '完成时间': record.completion_time.strftime('%Y-%m-%d') if record.completion_time else '-',
+            '备注': record.remarks or '-'
+        })
+    
+    df = pd.DataFrame(data)
+    
+    # 创建内存中的Excel文件
+    output = BytesIO()
+    writer = pd.ExcelWriter(output, engine='xlsxwriter')
+    
+    # 指定sheet名称
+    sheet_name = '车辆维修保养记录'
+    df.to_excel(writer, sheet_name=sheet_name, index=False, startrow=2)  # 从第3行开始写入数据
+    
+    # 获取工作簿和工作表对象
+    workbook = writer.book
+    worksheet = writer.sheets[sheet_name]
+    
+    # 设置标题格式
+    title_format = workbook.add_format({
+        'bold': True,
+        'font_size': 16,
+        'align': 'center',
+        'valign': 'vcenter'
+    })
+    
+    # 合并单元格并写入标题
+    worksheet.merge_range(0, 0, 0, len(df.columns) - 1, '车辆维修保养记录', title_format)
+    
+    # 添加导出时间
+    date_format = workbook.add_format({
+        'align': 'right',
+        'font_size': 10
+    })
+    export_time = f'导出时间：{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    worksheet.merge_range(1, 0, 1, len(df.columns) - 1, export_time, date_format)
+    
+    # 自动调整列宽
+    for idx, col in enumerate(df.columns):
+        column_width = max(len(str(col)), df[col].astype(str).map(len).max())
+        worksheet.set_column(idx, idx, column_width + 2)
+    
+    writer.close()
+    output.seek(0)
+    
+    # 生成文件名
+    filename = f'车辆维修保养记录_{datetime.now().strftime("%Y%m%d%H%M%S")}.xlsx'
+    
+    return send_file(
+        output, 
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+@bp.route('/get_car_type')
+@login_required
+def get_car_type():
+    plate_number = request.args.get('plate_number', '')
+    
+    if not plate_number:
+        return jsonify({'success': False, 'message': '车牌号不能为空'})
+    
+    car = OfficialCar.query.filter_by(plate_number=plate_number).first()
+    
+    if not car:
+        return jsonify({'success': False, 'message': '未找到车辆信息'})
+    
+    return jsonify({
+        'success': True,
+        'car_type': car.car_type or ''
+    })
 
 @bp.route('/car_fuel')
 @login_required
@@ -494,11 +777,38 @@ def use_car(car_id):
                           form=form, 
                           car=car)
 
-@bp.route('/maintain_car/<int:car_id>')
+@bp.route('/maintain_car/<int:car_id>', methods=['GET', 'POST'])
 @login_required
 def maintain_car(car_id):
     car = OfficialCar.query.get_or_404(car_id)
-    return render_template('vehicle/official_car/maintain_car.html', title='维修保养申请', car=car)
+    
+    if request.method == 'POST':
+        # 创建新的维修保养记录
+        record = CarMaintenanceRecord(
+            car_id=car.id,
+            application_time=datetime.strptime(request.form.get('application_time'), '%Y-%m-%d'),
+            car_type=request.form.get('car_type'),
+            plate_number=request.form.get('plate_number'),
+            driver=request.form.get('driver'),
+            sender=request.form.get('sender'),
+            reason=request.form.get('reason'),
+            maintenance_location=request.form.get('maintenance_location'),
+            remarks=request.form.get('remarks'),
+            created_by=current_user.id
+        )
+        
+        # 更新车辆状态为维保
+        car.status = CarStatus.maintenance
+        car.updated_by = current_user.id
+        car.updated_at = datetime.now()
+        
+        db.session.add(record)
+        db.session.commit()
+        
+        flash('维修保养申请已提交，车辆状态已更新为维保', 'success')
+        return redirect(url_for('official_car.car_maintenance'))
+    
+    return render_template('vehicle/official_car/maintain_car.html', title='维修保养申请', car=car, today=datetime.now())
 
 @bp.route('/refuel_car/<int:car_id>')
 @login_required

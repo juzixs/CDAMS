@@ -68,16 +68,22 @@ class CarUsageRecordFullForm(FlaskForm):
 
 class CarMaintenanceRecordForm(FlaskForm):
     """车辆维修保养记录表单"""
-    car_id = SelectField('车辆', coerce=int, validators=[DataRequired(message='请选择车辆')])
-    maintenance_type = SelectField('维修保养类型', choices=[('maintenance', '保养'), ('repair', '维修')])
-    maintenance_time = DateTimeField('维修保养时间', format='%Y-%m-%d %H:%M', validators=[DataRequired(message='请选择维修保养时间')])
-    maintenance_location = StringField('维修保养地点')
-    maintenance_items = TextAreaField('维修保养项目')
-    current_mileage = FloatField('当前里程', validators=[Optional()])
-    cost = FloatField('费用', validators=[Optional()])
-    invoice_number = StringField('发票号码')
-    invoice_file = FileField('发票', validators=[Optional(), FileAllowed(['jpg', 'png', 'pdf'], '只允许上传JPG, PNG和PDF文件')])
-    responsible_person = StringField('负责人')
+    application_time = DateField('申请时间', format='%Y-%m-%d', validators=[DataRequired(message='申请时间必填')])
+    car_type = StringField('车型', render_kw={'readonly': True})
+    plate_number = SelectField('车牌号', validators=[DataRequired(message='车牌号必填')])
+    driver = StringField('驾驶员')
+    sender = StringField('送修人')
+    reason = TextAreaField('送修原因')
+    maintenance_location = StringField('维修厂')
+    cost = FloatField('维修费用', validators=[Optional()])
+    completion_time = DateField('完成时间', format='%Y-%m-%d', validators=[Optional()])
+    remarks = TextAreaField('备注')
+    submit = SubmitField('提交')
+
+class CarMaintenanceCompleteForm(FlaskForm):
+    """车辆维修保养完成表单"""
+    cost = FloatField('维修费用', validators=[DataRequired(message='维修费用必填')])
+    completion_time = DateField('完成时间', format='%Y-%m-%d', validators=[DataRequired(message='完成时间必填')])
     remarks = TextAreaField('备注')
     submit = SubmitField('提交')
 
