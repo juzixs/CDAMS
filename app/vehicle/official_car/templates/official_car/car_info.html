@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>车辆信息</h2>
+    
+    <!-- 搜索和过滤表单 -->
+    <form method="GET" class="mb-4">
+        <div class="row">
+            <div class="col-md-4">
+                <div class="form-group">
+                    <input type="text" name="search" class="form-control" placeholder="搜索..." value="{{ request.args.get('search', '') }}">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <select name="usage_nature" class="form-control">
+                        <option value="">所有使用性质</option>
+                        {% for nature in usage_natures %}
+                        <option value="{{ nature }}" {% if nature == request.args.get('usage_nature') %}selected{% endif %}>
+                            {{ nature }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">搜索</button>
+                <a href="{{ url_for('vehicle.official_car.car_info') }}" class="btn btn-secondary">重置</a>
+            </div>
+        </div>
+    </form>
+
+    <!-- 车辆列表 -->
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>序号</th>
+                    <th>资产编号</th>
+                    <th>车牌号</th>
+                    <th>品牌</th>
+                    <th>车型</th>
+                    <th>资产描述</th>
+                    <th>座位数</th>
+                    <th>使用性质</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for car in cars.items %}
+                <tr>
+                    <td>{{ loop.index + (cars.page - 1) * cars.per_page }}</td>
+                    <td>{{ car.asset_number }}</td>
+                    <td>{{ car.plate_number }}</td>
+                    <td>{{ car.brand }}</td>
+                    <td>{{ car.car_type }}</td>
+                    <td>{{ car.asset_description }}</td>
+                    <td>{{ car.seat_count }}</td>
+                    <td>{{ car.usage_nature }}</td>
+                    <td>
+                        <a href="{{ url_for('vehicle.official_car.edit', id=car.id) }}" class="btn btn-sm btn-primary">编辑</a>
+                        <a href="{{ url_for('vehicle.official_car.detail', id=car.id) }}" class="btn btn-sm btn-info">详情</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 分页 -->
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% for page in cars.iter_pages() %}
+                {% if page %}
+                    <li class="page-item {% if page == cars.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('vehicle.official_car.car_info', page=page, search=request.args.get('search', ''), usage_nature=request.args.get('usage_nature', '')) }}">
+                            {{ page }}
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </nav>
+</div>
+{% endblock %} 

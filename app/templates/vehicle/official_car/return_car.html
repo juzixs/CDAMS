@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">收车</h4>
+                    <div class="card-tools">
+                        <a href="{{ url_for('official_car.car_usage') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">用车信息</h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <tr>
+                                            <th style="width: 40%">申请使用部门</th>
+                                            <td>{{ record.department }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>使用车牌号</th>
+                                            <td>{{ record.plate_number }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>出车日期</th>
+                                            <td>{{ record.departure_date.strftime('%Y-%m-%d') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>出车时间</th>
+                                            <td>{{ record.departure_time.strftime('%H:%M') }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>出车里程</th>
+                                            <td>{{ record.departure_mileage if record.departure_mileage else '-' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>出车去向及事由</th>
+                                            <td>{{ record.destination_purpose if record.destination_purpose else '-' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>驾驶员</th>
+                                            <td>{{ record.driver if record.driver else '-' }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>随同人员</th>
+                                            <td>{{ record.passengers if record.passengers else '-' }}</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <form method="post" action="{{ url_for('official_car.return_car', record_id=record.id) }}">
+                                {{ form.hidden_tag() }}
+                                
+                                <div class="form-group">
+                                    <label for="return_time">收车时间 <span class="text-danger">*</span></label>
+                                    {{ form.return_time(class="form-control" + (" is-invalid" if form.return_time.errors else ""), id="return_time") }}
+                                    {% if form.return_time.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.return_time.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="return_mileage">收车里程</label>
+                                    {{ form.return_mileage(class="form-control" + (" is-invalid" if form.return_mileage.errors else ""), id="return_mileage", placeholder="请输入收车里程") }}
+                                    {% if form.return_mileage.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.return_mileage.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        {{ form.refueling(class="custom-control-input", id="refueling") }}
+                                        <label class="custom-control-label" for="refueling">加油</label>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="maintenance">维修</label>
+                                    {{ form.maintenance(class="form-control" + (" is-invalid" if form.maintenance.errors else ""), id="maintenance", placeholder="请输入维修信息") }}
+                                    {% if form.maintenance.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.maintenance.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="toll_fee">过路过桥费</label>
+                                    {{ form.toll_fee(class="form-control" + (" is-invalid" if form.toll_fee.errors else ""), id="toll_fee", placeholder="请输入过路过桥费") }}
+                                    {% if form.toll_fee.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.toll_fee.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="parking_fee">停车费</label>
+                                    {{ form.parking_fee(class="form-control" + (" is-invalid" if form.parking_fee.errors else ""), id="parking_fee", placeholder="请输入停车费") }}
+                                    {% if form.parking_fee.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.parking_fee.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="accident_violation">交通事故、违章</label>
+                                    {{ form.accident_violation(class="form-control" + (" is-invalid" if form.accident_violation.errors else ""), id="accident_violation", rows="3", placeholder="请输入交通事故、违章信息") }}
+                                    {% if form.accident_violation.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.accident_violation.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">提交</button>
+                                    <a href="{{ url_for('official_car.car_usage') }}" class="btn btn-secondary">取消</a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // 设置当前日期时间为默认值
+        if (!$('#return_time').val()) {
+            var now = new Date();
+            var year = now.getFullYear();
+            var month = String(now.getMonth() + 1).padStart(2, '0');
+            var day = String(now.getDate()).padStart(2, '0');
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var datetime = year + '-' + month + '-' + day + ' ' + hours + ':' + minutes;
+            $('#return_time').val(datetime);
+        }
+    });
+</script>
+{% endblock %} 

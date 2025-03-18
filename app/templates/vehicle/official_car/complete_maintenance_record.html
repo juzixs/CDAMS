@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h4 class="card-title m-0">
+                        <i class="fas fa-check-circle text-success mr-2"></i>完成维修保养记录
+                    </h4>
+                    <div class="card-tools">
+                        <a href="{{ url_for('official_car.car_maintenance') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回列表
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">维修保养信息</h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <p><strong>申请时间：</strong> {{ record.application_time.strftime('%Y-%m-%d') }}</p>
+                                            <p><strong>车牌号：</strong> {{ record.plate_number }}</p>
+                                            <p><strong>车型：</strong> {{ record.car_type }}</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>驾驶员：</strong> {{ record.driver or '无' }}</p>
+                                            <p><strong>送修人：</strong> {{ record.sender or '无' }}</p>
+                                            <p><strong>维修厂：</strong> {{ record.maintenance_location or '无' }}</p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p><strong>送修原因：</strong> {{ record.reason or '无' }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" class="needs-validation" novalidate>
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="cost" class="form-label">维修费用 <span class="text-danger">*</span></label>
+                                    <input type="number" step="0.01" class="form-control" id="cost" name="cost" value="{{ form.cost.data or record.cost or '' }}" required>
+                                    {% if form.cost.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.cost.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="completion_time" class="form-label">完成时间 <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" id="completion_time" name="completion_time" value="{{ form.completion_time.data.strftime('%Y-%m-%d') if form.completion_time.data else (record.completion_time.strftime('%Y-%m-%d') if record.completion_time else today.strftime('%Y-%m-%d')) }}" required>
+                                    {% if form.completion_time.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.completion_time.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="remarks" class="form-label">备注</label>
+                                    <textarea class="form-control" id="remarks" name="remarks" rows="3">{{ form.remarks.data or record.remarks or '' }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-center mt-4">
+                            <button type="submit" class="btn btn-success">完成维修</button>
+                            <a href="{{ url_for('official_car.car_maintenance') }}" class="btn btn-secondary ms-2">取消</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

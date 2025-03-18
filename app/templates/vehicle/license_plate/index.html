@@ -66,31 +66,31 @@
 <div class="table-responsive">
     <form id="vehicleForm" method="post" action="{{ url_for('license_plate.generate_pdf') }}">
         {{ form.csrf_token }}
-        <table class="table table-striped">
+        <table class="table table-striped text-center">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAll"></th>
-                    <th>车牌号</th>
-                    <th>车辆类型</th>
-                    <th>车主姓名</th>
-                    <th>所属部门</th>
-                    <th>备注</th>
-                    <th>状态</th>
-                    <th>创建时间</th>
-                    <th>发放时间</th>
-                    <th>操作</th>
+                    <th class="text-center"><input type="checkbox" id="selectAll"></th>
+                    <th class="text-center">车牌号</th>
+                    <th class="text-center">车辆类型</th>
+                    <th class="text-center">车主姓名</th>
+                    <th class="text-center">所属部门</th>
+                    <th class="text-center">备注</th>
+                    <th class="text-center">状态</th>
+                    <th class="text-center">创建时间</th>
+                    <th class="text-center">发放时间</th>
+                    <th class="text-center">操作</th>
                 </tr>
             </thead>
             <tbody>
                 {% for vehicle in vehicles.items %}
                 <tr>
-                    <td><input type="checkbox" name="vehicle_ids[]" value="{{ vehicle.id }}"></td>
-                    <td>{{ vehicle.plate_number }}</td>
-                    <td>{{ vehicle.vehicle_type }}</td>
-                    <td>{{ vehicle.owner_name }}</td>
-                    <td>{{ vehicle.department }}</td>
-                    <td>{{ vehicle.remarks or '-' }}</td>
-                    <td>
+                    <td class="text-center"><input type="checkbox" name="vehicle_ids[]" value="{{ vehicle.id }}"></td>
+                    <td class="text-center">{{ vehicle.plate_number }}</td>
+                    <td class="text-center">{{ vehicle.vehicle_type }}</td>
+                    <td class="text-center">{{ vehicle.owner_name }}</td>
+                    <td class="text-center">{{ vehicle.department }}</td>
+                    <td class="text-center">{{ vehicle.remarks or '-' }}</td>
+                    <td class="text-center">
                         {% if vehicle.status == 'pending' %}
                         <span class="badge bg-warning">待审核</span>
                         {% elif vehicle.status == 'approved' %}
@@ -99,9 +99,9 @@
                         <span class="badge bg-danger">已拒绝</span>
                         {% endif %}
                     </td>
-                    <td>{{ vehicle.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ vehicle.issued_at.strftime('%Y-%m-%d %H:%M') if vehicle.issued_at else '-' }}</td>
-                    <td>
+                    <td class="text-center">{{ vehicle.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td class="text-center">{{ vehicle.issued_at.strftime('%Y-%m-%d %H:%M') if vehicle.issued_at else '-' }}</td>
+                    <td class="text-center">
                         <div class="btn-group">
                             <a href="{{ url_for('license_plate.edit', id=vehicle.id) }}" class="btn btn-sm btn-primary">
                                 <i class="fas fa-edit"></i>

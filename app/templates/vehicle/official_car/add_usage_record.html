@@ -1,0 +1,264 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="card-title">添加用车记录</h4>
+                    <div class="card-tools">
+                        <a href="{{ url_for('official_car.car_usage') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('official_car.add_usage_record') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="department">申请使用部门 <span class="text-danger">*</span></label>
+                                    {{ form.department(class="form-control" + (" is-invalid" if form.department.errors else ""), id="department", placeholder="请输入申请使用部门") }}
+                                    {% if form.department.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.department.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="plate_number">使用车牌号 <span class="text-danger">*</span></label>
+                                    {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else ""), id="plate_number") }}
+                                    {% if form.plate_number.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.plate_number.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="departure_date">出车日期 <span class="text-danger">*</span></label>
+                                    {{ form.departure_date(class="form-control" + (" is-invalid" if form.departure_date.errors else ""), id="departure_date", type="date") }}
+                                    {% if form.departure_date.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.departure_date.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="departure_time">出车时间 <span class="text-danger">*</span></label>
+                                    {{ form.departure_time(class="form-control" + (" is-invalid" if form.departure_time.errors else ""), id="departure_time", placeholder="HH:MM") }}
+                                    {% if form.departure_time.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.departure_time.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="departure_mileage">出车里程</label>
+                                    {{ form.departure_mileage(class="form-control" + (" is-invalid" if form.departure_mileage.errors else ""), id="departure_mileage", placeholder="请输入出车里程") }}
+                                    {% if form.departure_mileage.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.departure_mileage.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="driver">驾驶员</label>
+                                    {{ form.driver(class="form-control" + (" is-invalid" if form.driver.errors else ""), id="driver", placeholder="请输入驾驶员姓名") }}
+                                    {% if form.driver.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.driver.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="destination_purpose">出车去向及事由</label>
+                            {{ form.destination_purpose(class="form-control" + (" is-invalid" if form.destination_purpose.errors else ""), id="destination_purpose", rows="3", placeholder="请输入出车去向及事由") }}
+                            {% if form.destination_purpose.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.destination_purpose.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="passengers">随同人员</label>
+                            {{ form.passengers(class="form-control" + (" is-invalid" if form.passengers.errors else ""), id="passengers", rows="2", placeholder="请输入随同人员") }}
+                            {% if form.passengers.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.passengers.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <hr>
+                        <h5>收车信息（可选）</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="return_time">收车时间</label>
+                                    {{ form.return_time(class="form-control" + (" is-invalid" if form.return_time.errors else ""), id="return_time") }}
+                                    {% if form.return_time.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.return_time.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="return_mileage">收车里程</label>
+                                    {{ form.return_mileage(class="form-control" + (" is-invalid" if form.return_mileage.errors else ""), id="return_mileage", placeholder="请输入收车里程") }}
+                                    {% if form.return_mileage.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.return_mileage.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div class="custom-control custom-checkbox">
+                                        {{ form.refueling(class="custom-control-input", id="refueling") }}
+                                        <label class="custom-control-label" for="refueling">加油</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="maintenance">维修</label>
+                                    {{ form.maintenance(class="form-control" + (" is-invalid" if form.maintenance.errors else ""), id="maintenance", placeholder="请输入维修信息") }}
+                                    {% if form.maintenance.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.maintenance.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="toll_fee">过路过桥费</label>
+                                    {{ form.toll_fee(class="form-control" + (" is-invalid" if form.toll_fee.errors else ""), id="toll_fee", placeholder="请输入过路过桥费") }}
+                                    {% if form.toll_fee.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.toll_fee.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="parking_fee">停车费</label>
+                                    {{ form.parking_fee(class="form-control" + (" is-invalid" if form.parking_fee.errors else ""), id="parking_fee", placeholder="请输入停车费") }}
+                                    {% if form.parking_fee.errors %}
+                                    <div class="invalid-feedback">
+                                        {% for error in form.parking_fee.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="accident_violation">交通事故、违章</label>
+                            {{ form.accident_violation(class="form-control" + (" is-invalid" if form.accident_violation.errors else ""), id="accident_violation", rows="3", placeholder="请输入交通事故、违章信息") }}
+                            {% if form.accident_violation.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.accident_violation.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">提交</button>
+                            <a href="{{ url_for('official_car.car_usage') }}" class="btn btn-secondary">取消</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    $(document).ready(function() {
+        // 设置当前日期为默认值
+        if (!$('#departure_date').val()) {
+            var today = new Date();
+            var dd = String(today.getDate()).padStart(2, '0');
+            var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+            var yyyy = today.getFullYear();
+            today = yyyy + '-' + mm + '-' + dd;
+            $('#departure_date').val(today);
+        }
+        
+        // 设置当前时间为默认值
+        if (!$('#departure_time').val()) {
+            var now = new Date();
+            var hours = String(now.getHours()).padStart(2, '0');
+            var minutes = String(now.getMinutes()).padStart(2, '0');
+            var time = hours + ':' + minutes;
+            $('#departure_time').val(time);
+        }
+    });
+</script>
+{% endblock %} 

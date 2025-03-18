@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header d-flex justify-content-between align-items-center bg-light">
+                    <h4 class="card-title m-0">
+                        <i class="fas fa-shield-alt text-primary mr-2"></i>添加车辆保险记录
+                    </h4>
+                    <div class="card-tools">
+                        <a href="{{ url_for('official_car.car_insurance') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-left"></i> 返回保险记录
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('official_car.add_insurance') }}">
+                        {{ form.hidden_tag() }}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.plate_number.label(class="form-label") }}
+                                    {{ form.plate_number(class="form-control" + (" is-invalid" if form.plate_number.errors else ""), id="plate_number_select") }}
+                                    {% for error in form.plate_number.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label">车型</label>
+                                    <input type="text" class="form-control" id="car_type_display" readonly>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.amount.label(class="form-label") }}
+                                    {{ form.amount(class="form-control" + (" is-invalid" if form.amount.errors else "")) }}
+                                    {% for error in form.amount.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.insurance_period.label(class="form-label") }}
+                                    <small class="text-muted d-block">{{ form.insurance_period.description }}</small>
+                                    {{ form.insurance_period(class="form-control" + (" is-invalid" if form.insurance_period.errors else ""), id="insurance_period") }}
+                                    {% for error in form.insurance_period.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.renewal_date.label(class="form-label") }}
+                                    {{ form.renewal_date(class="form-control" + (" is-invalid" if form.renewal_date.errors else ""), type="date") }}
+                                    {% for error in form.renewal_date.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{{ url_for('official_car.car_insurance') }}" class="btn btn-secondary">取消</a>
+                                    {{ form.submit(class="btn btn-primary") }}
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 车型信息
+    var carTypes = JSON.parse('{{ car_types|tojson|safe }}');
+    
+    // 当选择车牌号时，自动填充车型和更新保险日期
+    $(document).ready(function() {
+        // 初始化时设置车型
+        updateCarType();
+        
+        // 当车牌号变化时更新车型和保险日期
+        $('#plate_number_select').change(function() {
+            updateCarType();
+            updateInsurancePeriod();
+        });
+        
+        function updateCarType() {
+            var plateNumber = $('#plate_number_select').val();
+            var carType = carTypes[plateNumber] || '';
+            $('#car_type_display').val(carType);
+        }
+        
+        function updateInsurancePeriod() {
+            var plateNumber = $('#plate_number_select').val();
+            if (plateNumber) {
+                // 发送AJAX请求获取该车辆的最新保险记录
+                $.ajax({
+                    url: "{{ url_for('official_car.get_latest_insurance') }}",
+                    type: "GET",
+                    data: { plate_number: plateNumber },
+                    success: function(response) {
+                        if (response.success) {
+                            // 如果有保险记录，使用计算的下一年保险期限
+                            $('#insurance_period').val(response.insurance_period);
+                        }
+                    }
+                });
+            }
+        }
+    });
+</script>
+{% endblock %} 
