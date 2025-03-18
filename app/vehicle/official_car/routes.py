@@ -593,9 +593,17 @@ def complete_maintenance_record(id):
         record.updated_by = current_user.id
         record.updated_at = datetime.now()
         
+        # 更新相关车辆的状态为"空闲"
+        if record.car_id:
+            car = OfficialCar.query.get(record.car_id)
+            if car and car.status == CarStatus.maintenance:
+                car.status = CarStatus.idle
+                car.updated_by = current_user.id
+                car.updated_at = datetime.now()
+        
         db.session.commit()
         
-        flash('维修保养记录已完成', 'success')
+        flash('维修保养记录已完成，车辆状态已更新为空闲', 'success')
         return redirect(url_for('official_car.car_maintenance'))
     
     return render_template('vehicle/official_car/complete_maintenance_record.html',
