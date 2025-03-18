@@ -54,8 +54,8 @@
                 <div class="card bg-info text-dark h-100">
                     <div class="card-body d-flex flex-column align-items-center">
                         <i class="fas fa-gas-pump fa-3x mb-3"></i>
-                        <h5 class="card-title">车辆加油充值</h5>
-                        <p class="card-text text-center small">申请和记录车辆加油充值</p>
+                        <h5 class="card-title">车辆加油/充电</h5>
+                        <p class="card-text text-center small">申请和记录车辆加油/充电</p>
                     </div>
                 </div>
             </a>
@@ -147,7 +147,7 @@
                                     <a href="{{ url_for('official_car.maintain_car', car_id=car.id) }}" class="btn btn-sm btn-warning" title="维保">
                                         <i class="fas fa-tools"></i>
                                     </a>
-                                    <a href="{{ url_for('official_car.refuel_car', car_id=car.id) }}" class="btn btn-sm btn-info" title="加油">
+                                    <a href="{{ url_for('official_car.refuel_car', car_id=car.id) }}" class="btn btn-sm btn-info" title="加油/充电">
                                         <i class="fas fa-gas-pump"></i>
                                     </a>
                                     <a href="{{ url_for('official_car.add_insurance', plate_number=car.plate_number) }}" class="btn btn-sm btn-primary" title="续保">

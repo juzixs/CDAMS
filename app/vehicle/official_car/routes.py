@@ -781,7 +781,7 @@ def get_car_type():
 @bp.route('/car_fuel')
 @login_required
 def car_fuel():
-    return render_template('vehicle/official_car/car_fuel.html', title='车辆加油充值')
+    return render_template('vehicle/official_car/car_fuel.html', title='车辆加油/充电')
 
 @bp.route('/use_car/<int:car_id>', methods=['GET', 'POST'])
 @login_required
@@ -860,7 +860,7 @@ def maintain_car(car_id):
 @login_required
 def refuel_car(car_id):
     car = OfficialCar.query.get_or_404(car_id)
-    return render_template('vehicle/official_car/refuel_car.html', title='加油充值申请', car=car)
+    return render_template('vehicle/official_car/refuel_car.html', title='加油/充电申请', car=car)
 
 @bp.route('/delete_car/<int:car_id>', methods=['POST'])
 @login_required
