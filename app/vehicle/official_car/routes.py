@@ -524,7 +524,15 @@ def add_maintenance_record():
         car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
         car_type = car.car_type if car else ''
         
+        if not car:
+            flash('未找到对应车牌号的车辆，请重新选择', 'danger')
+            return render_template('vehicle/official_car/add_maintenance_record.html',
+                                  title='添加维修保养记录',
+                                  form=form,
+                                  today=datetime.now())
+        
         record = CarMaintenanceRecord(
+            car_id=car.id,  # 添加car_id字段
             application_time=form.application_time.data,
             car_type=car_type,
             plate_number=form.plate_number.data,
@@ -566,8 +574,17 @@ def edit_maintenance_record(id):
     if form.validate_on_submit():
         # 获取车型
         car = OfficialCar.query.filter_by(plate_number=form.plate_number.data).first()
+        
+        if not car:
+            flash('未找到对应车牌号的车辆，请重新选择', 'danger')
+            return render_template('vehicle/official_car/add_maintenance_record.html',
+                                  title='编辑维修保养记录',
+                                  form=form,
+                                  today=datetime.now())
+        
         car_type = car.car_type if car else ''
         
+        record.car_id = car.id  # 更新car_id，确保与车牌号匹配
         record.application_time = form.application_time.data
         record.car_type = car_type
         record.plate_number = form.plate_number.data
@@ -741,17 +758,24 @@ def export_maintenance_records():
 def get_car_type():
     plate_number = request.args.get('plate_number', '')
     
+    print(f"获取车型API被调用，车牌号: '{plate_number}'")
+    
     if not plate_number:
+        print("错误: 车牌号为空")
         return jsonify({'success': False, 'message': '车牌号不能为空'})
     
     car = OfficialCar.query.filter_by(plate_number=plate_number).first()
     
     if not car:
+        print(f"错误: 未找到车辆信息，车牌号: '{plate_number}'")
         return jsonify({'success': False, 'message': '未找到车辆信息'})
+    
+    car_type = car.car_type or ''
+    print(f"成功: 找到车型: '{car_type}'，车牌号: '{plate_number}'")
     
     return jsonify({
         'success': True,
-        'car_type': car.car_type or ''
+        'car_type': car_type
     })
 
 @bp.route('/car_fuel')

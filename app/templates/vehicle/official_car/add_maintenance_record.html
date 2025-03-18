@@ -37,7 +37,6 @@
                                 <div class="form-group">
                                     <label for="plate_number" class="form-label">车牌号 <span class="text-danger">*</span></label>
                                     <select class="form-select" id="plate_number" name="plate_number" required>
-                                        <option value="">请选择车牌号</option>
                                         {% for choice in form.plate_number.choices %}
                                         <option value="{{ choice[0] }}" {% if form.plate_number.data == choice[0] %}selected{% endif %}>{{ choice[1] }}</option>
                                         {% endfor %}
@@ -123,21 +122,66 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('页面已加载，初始化车牌号变更事件');
+    // 获取车牌号下拉框和车型输入框
+    const plateNumberSelect = document.getElementById('plate_number');
+    const carTypeInput = document.getElementById('car_type');
+    
+    // 初始加载时，如果已选择车牌号，则尝试获取车型
+    if (plateNumberSelect && plateNumberSelect.value) {
+        console.log('页面加载时已有车牌号：', plateNumberSelect.value);
+        fetchCarType(plateNumberSelect.value);
+    }
+    
     // 当车牌号选择变化时，获取对应的车型信息
-    document.getElementById('plate_number').addEventListener('change', function() {
-        const plateNumber = this.value;
-        if (plateNumber) {
-            fetch(`{{ url_for('official_car.get_car_type') }}?plate_number=${plateNumber}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        document.getElementById('car_type').value = data.car_type || '';
-                    }
-                });
-        } else {
-            document.getElementById('car_type').value = '';
+    if (plateNumberSelect) {
+        plateNumberSelect.addEventListener('change', function() {
+            const plateNumber = this.value;
+            console.log('车牌号变更为：', plateNumber);
+            fetchCarType(plateNumber);
+        });
+    } else {
+        console.error('未找到车牌号选择框元素');
+    }
+    
+    // 获取车型信息的函数
+    function fetchCarType(plateNumber) {
+        if (!plateNumber) {
+            console.log('车牌号为空，清空车型');
+            if (carTypeInput) carTypeInput.value = '';
+            return;
         }
-    });
+        
+        const apiUrl = `/vehicle/official_car/get_car_type?plate_number=${encodeURIComponent(plateNumber)}`;
+        console.log('请求API：', apiUrl);
+        
+        fetch(apiUrl)
+            .then(response => {
+                console.log('收到响应，状态：', response.status);
+                if (!response.ok) {
+                    throw new Error(`网络响应错误: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('解析的响应数据：', data);
+                if (data.success) {
+                    if (carTypeInput) {
+                        carTypeInput.value = data.car_type || '';
+                        console.log('已设置车型为：', data.car_type || '(空)');
+                    } else {
+                        console.error('未找到车型输入框元素');
+                    }
+                } else {
+                    console.error('获取车型失败，后端消息：', data.message);
+                    if (carTypeInput) carTypeInput.value = '';
+                }
+            })
+            .catch(error => {
+                console.error('API请求异常：', error);
+                if (carTypeInput) carTypeInput.value = '';
+            });
+    }
 });
 </script>
 {% endblock %} 
