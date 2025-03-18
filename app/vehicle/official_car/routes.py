@@ -475,8 +475,11 @@ def car_maintenance():
             (CarMaintenanceRecord.remarks.ilike(f'%{search}%'))
         )
     
-    # 按申请时间降序排序（新申请的在上）
-    query = query.order_by(CarMaintenanceRecord.application_time.desc())
+    # 按申请时间降序排序（新申请的在上），相同申请时间的按创建时间降序排序（新创建的在上）
+    query = query.order_by(
+        CarMaintenanceRecord.application_time.desc(),
+        CarMaintenanceRecord.created_at.desc()
+    )
     
     # 分页
     records = query.paginate(page=page, per_page=per_page)
@@ -485,10 +488,18 @@ def car_maintenance():
     all_cars = OfficialCar.query.filter(OfficialCar.status != CarStatus.scrapped).all()
     plate_numbers = [(car.plate_number, car.plate_number) for car in all_cars if car.plate_number]
     
-    # 获取所有年份
-    current_year = datetime.now().year
-    years = [(str(year), str(year)) for year in range(current_year - 5, current_year + 1)]
-    years.reverse()  # 最新的年份在前
+    # 从数据库获取所有存在的申请时间年份
+    all_years = db.session.query(db.extract('year', CarMaintenanceRecord.application_time))\
+                          .filter(CarMaintenanceRecord.application_time.isnot(None))\
+                          .distinct()\
+                          .order_by(db.extract('year', CarMaintenanceRecord.application_time).desc())\
+                          .all()
+    years = [(str(year[0]), str(year[0])) for year in all_years if year[0]]
+    
+    # 如果数据库中没有年份记录，则提供当前年份作为默认选项
+    if not years:
+        current_year = datetime.now().year
+        years = [(str(current_year), str(current_year))]
     
     return render_template('vehicle/official_car/car_maintenance.html', 
                            title='车辆维修保养',
@@ -651,8 +662,11 @@ def export_maintenance_records():
             (CarMaintenanceRecord.remarks.ilike(f'%{search}%'))
         )
     
-    # 按申请时间降序排序
-    records = query.order_by(CarMaintenanceRecord.application_time.desc()).all()
+    # 导出Excel时使用与页面相反的排序逻辑：按申请时间升序排序（越早的越靠前），相同申请时间的按创建时间升序排序（越早提交的越靠前）
+    records = query.order_by(
+        CarMaintenanceRecord.application_time.asc(),
+        CarMaintenanceRecord.created_at.asc()
+    ).all()
     
     # 创建DataFrame
     data = []
